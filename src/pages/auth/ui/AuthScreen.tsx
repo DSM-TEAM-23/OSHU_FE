@@ -10,11 +10,13 @@ export function AuthScreen({
   setMode,
   onLogin,
   onSignup,
+  onNotify,
 }: {
   mode: AuthMode;
   setMode: (mode: AuthMode) => void;
   onLogin: (loginId: string, password: string) => boolean;
   onSignup: (draft: SignupDraft) => void;
+  onNotify: (message: string, type?: 'success' | 'error') => void;
 }) {
   const [loginId, setLoginId] = useState('oshu_bakery');
   const [loginPassword, setLoginPassword] = useState('pass1234');
@@ -30,8 +32,17 @@ export function AuthScreen({
   };
 
   const submitLogin = () => {
+    if (!loginId.trim() || !loginPassword) {
+      const message = '계정 ID와 비밀번호를 입력해주세요.';
+      setLoginError(message);
+      onNotify(message, 'error');
+      return;
+    }
+
     const success = onLogin(loginId, loginPassword);
-    setLoginError(success ? '' : '계정ID 또는 비밀번호를 확인해주세요.');
+    const message = '계정 ID 또는 비밀번호가 일치하지 않습니다.';
+    setLoginError(success ? '' : message);
+    onNotify(success ? '로그인되었습니다.' : message, success ? 'success' : 'error');
   };
 
   const canGoNext = () => {
@@ -51,8 +62,12 @@ export function AuthScreen({
   };
 
   const submitSignup = () => {
-    if (!canGoNext()) return;
+    if (!canGoNext()) {
+      onNotify('필수 정보를 모두 입력해주세요.', 'error');
+      return;
+    }
     onSignup(draft);
+    onNotify('회원가입이 완료되었습니다.', 'success');
   };
 
   return (

@@ -10,13 +10,15 @@ export function TimeSalePage({
   onClose,
   editingTimeSaleId,
   onEditConsumed,
+  onNotify,
 }: {
   timeSales: TimeSale[];
-  onSubmit: (body: TimeSaleRequest) => Promise<void>;
+  onSubmit: (body: TimeSaleRequest) => Promise<string | undefined>;
   onUpdate: (timeSaleId: number, body: TimeSaleRequest) => Promise<string | undefined>;
   onClose: (timeSaleId: number) => Promise<void>;
   editingTimeSaleId?: number | null;
   onEditConsumed?: () => void;
+  onNotify: (message: string, type?: 'success' | 'error') => void;
 }) {
   const [form, setForm] = useState<TimeSaleRequest>({
     productName: '',
@@ -63,10 +65,12 @@ export function TimeSalePage({
       const warning = await onUpdate(editingId, form);
       setMessage(warning ? '화면에는 수정되었습니다.' : '수정되었습니다.');
       setError(warning ?? '');
+      onNotify(warning ?? '타임세일을 수정했습니다.', warning ? 'error' : 'success');
     } else {
-      await onSubmit(form);
-      setMessage('등록되었습니다.');
-      setError('');
+      const warning = await onSubmit(form);
+      setMessage(warning ? '화면에는 등록되었습니다.' : '등록되었습니다.');
+      setError(warning ?? '');
+      onNotify(warning ?? '타임세일을 등록했습니다.', warning ? 'error' : 'success');
     }
     setIsModalOpen(false);
     resetForm();

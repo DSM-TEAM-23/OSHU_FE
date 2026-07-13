@@ -25,9 +25,11 @@ type StoreFormState = CreateStoreRequest & {
 export function StorePage({
   store,
   onSubmit,
+  onNotify,
 }: {
   store: StoreDetail | null;
-  onSubmit: (body: CreateStoreRequest, extra: { congestionStatus: StoreCongestionStatus }) => Promise<void>;
+  onSubmit: (body: CreateStoreRequest, extra: { congestionStatus: StoreCongestionStatus }) => Promise<string | undefined>;
+  onNotify: (message: string, type?: 'success' | 'error') => void;
 }) {
   const initialHours = splitOpeningHours(store?.openingHours);
   const [form, setForm] = useState<StoreFormState>({
@@ -54,8 +56,10 @@ export function StorePage({
   const submit = async () => {
     const openingHours = form.openingTime && form.closingTime ? `${form.openingTime}-${form.closingTime}` : form.openingHours;
     const { openingTime, closingTime, congestionStatus, ...requestBody } = form;
-    await onSubmit({ ...requestBody, openingHours }, { congestionStatus });
-    setMessage('저장되었습니다.');
+    const warning = await onSubmit({ ...requestBody, openingHours }, { congestionStatus });
+    const message = warning ? '화면에는 저장되었습니다.' : '저장되었습니다.';
+    setMessage(message);
+    onNotify(warning ?? message, warning ? 'error' : 'success');
     setIsModalOpen(false);
   };
 

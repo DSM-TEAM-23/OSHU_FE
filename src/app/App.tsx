@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { LogOut, Plus, Store } from 'lucide-react';
 import type { CreateStoreRequest, PromotionDetail, PromotionRequest, StoreCongestionStatus, StoreDetail, TimeSale, TimeSaleRequest } from '../entities/owner/types';
 import type { AuthMode, MenuKey, MerchantData, MockAccount, Session, SignupDraft } from '../entities/owner/types/ui';
@@ -11,6 +11,7 @@ import { StorePage } from '../pages/store/ui/StorePage';
 import { TimeSalePage } from '../pages/time-sale/ui/TimeSalePage';
 import { PromotionPage } from '../pages/promotion/ui/PromotionPage';
 import { LayoutDashboard, Megaphone, Tag } from 'lucide-react';
+import { Toast, type ToastState } from '../shared/ui/Toast';
 
 const menuItems = [
   { key: 'dashboard' as const, label: '대시보드', icon: LayoutDashboard },
@@ -40,11 +41,22 @@ export function App() {
   const [authMode, setAuthMode] = useState<AuthMode>('login');
   const [activeMenu, setActiveMenu] = useState<MenuKey>('dashboard');
   const [editingTimeSaleId, setEditingTimeSaleId] = useState<number | null>(null);
+  const [toast, setToast] = useState<ToastState>(null);
 
   const pageTitle = useMemo(
     () => menuItems.find((item) => item.key === activeMenu)?.label ?? '대시보드',
     [activeMenu],
   );
+
+  const showToast = (message: string, type: 'success' | 'error' = 'error') => {
+    setToast({ message, type });
+  };
+
+  useEffect(() => {
+    if (!toast) return undefined;
+    const timer = window.setTimeout(() => setToast(null), 3200);
+    return () => window.clearTimeout(timer);
+  }, [toast]);
 
   const handleLogin = (loginId: string, password: string) => {
     const account = accounts.find((item) => item.loginId === loginId.trim() && item.password === password);
@@ -102,6 +114,7 @@ export function App() {
     setMerchantData(null);
     setActiveMenu('dashboard');
     setAuthMode('login');
+    showToast('로그아웃되었습니다.', 'success');
   };
 
   const updateStore = (patch: Partial<StoreDetail>) => {
@@ -112,16 +125,26 @@ export function App() {
     if (!session) return;
 
     if (merchantData?.store?.storeId) {
-      await ownerApi.updateStore(session.accessToken, merchantData.store.storeId, {
-        description: body.description,
-        phone: body.phone,
-        openingHours: body.openingHours,
-      }).catch(() => undefined);
+      let warning: string | undefined;
+      try {
+        await ownerApi.updateStore(session.accessToken, merchantData.store.storeId, {
+          description: body.description,
+          phone: body.phone,
+          openingHours: body.openingHours,
+        });
+      } catch (error) {
+        warning = getRequestFailureMessage(error);
+      }
       updateStore({ ...body, congestionStatus: extra?.congestionStatus });
-      return;
+      return warning;
     }
 
-    await ownerApi.createStore(session.accessToken, body).catch(() => undefined);
+    let warning: string | undefined;
+    try {
+      await ownerApi.createStore(session.accessToken, body);
+    } catch (error) {
+      warning = getRequestFailureMessage(error);
+    }
     const nextStore: StoreDetail = {
       storeId: Date.now(),
       status: 'PENDING_APPROVAL',
@@ -131,26 +154,39 @@ export function App() {
       ...body,
     };
     setMerchantData((prev) => (prev ? { ...prev, store: nextStore } : prev));
+    return warning;
   };
 
   const submitTimeSale = async (body: TimeSaleRequest) => {
     if (!session || !merchantData?.store?.storeId) return;
-    const created = await ownerApi.createTimeSale(session.accessToken, merchantData.store.storeId, body).catch(() => undefined);
+    let warning: string | undefined;
+    const created = await ownerApi.createTimeSale(session.accessToken, merchantData.store.storeId, body).catch((error) => {
+      warning = getRequestFailureMessage(error);
+      return undefined;
+    });
     const nextTimeSale: TimeSale = created ?? {
       ...body,
       timeSaleId: Date.now(),
       status: 'SCHEDULED',
     };
     setMerchantData((prev) => (prev ? { ...prev, timeSales: [nextTimeSale, ...prev.timeSales] } : prev));
+    return warning;
   };
 
   const closeTimeSale = async (timeSaleId: number) => {
     if (!session) return;
-    await ownerApi.closeTimeSale(session.accessToken, timeSaleId).catch(() => undefined);
+    let warning: string | undefined;
+    try {
+      await ownerApi.closeTimeSale(session.accessToken, timeSaleId);
+    } catch (error) {
+      warning = getRequestFailureMessage(error);
+    }
     setMerchantData((prev) => (prev ? {
       ...prev,
       timeSales: prev.timeSales.map((item) => item.timeSaleId === timeSaleId ? { ...item, status: 'ENDED' } : item),
     } : prev));
+    if (warning) showToast(warning, 'error');
+    else showToast('타임세일을 종료했습니다.', 'success');
   };
 
   const updateTimeSale = async (timeSaleId: number, body: TimeSaleRequest) => {
@@ -170,7 +206,11 @@ export function App() {
 
   const submitPromotion = async (body: PromotionRequest) => {
     if (!session || !merchantData?.store?.storeId) return;
-    const created = await ownerApi.createPromotion(session.accessToken, merchantData.store.storeId, body).catch(() => undefined);
+    let warning: string | undefined;
+    const created = await ownerApi.createPromotion(session.accessToken, merchantData.store.storeId, body).catch((error) => {
+      warning = getRequestFailureMessage(error);
+      return undefined;
+    });
     const nextPromotion: PromotionDetail = created ?? {
       promotionId: Date.now(),
       storeId: merchantData.store.storeId,
@@ -184,6 +224,7 @@ export function App() {
       status: 'SCHEDULED',
     };
     setMerchantData((prev) => (prev ? { ...prev, promotions: [nextPromotion, ...prev.promotions] } : prev));
+    return warning;
   };
 
   const openTimeSalePage = () => {
@@ -196,7 +237,12 @@ export function App() {
   };
 
   if (!session || !merchantData) {
-    return <AuthScreen mode={authMode} setMode={setAuthMode} onLogin={handleLogin} onSignup={handleSignup} />;
+    return (
+      <>
+        <AuthScreen mode={authMode} setMode={setAuthMode} onLogin={handleLogin} onSignup={handleSignup} onNotify={showToast} />
+        <Toast toast={toast} onClose={() => setToast(null)} />
+      </>
+    );
   }
 
   return (
@@ -231,7 +277,7 @@ export function App() {
 
         <section className="workspace">
           {activeMenu === 'dashboard' && <DashboardPage merchantData={merchantData} setActiveMenu={setActiveMenu} onEditTimeSale={editTimeSaleFromDashboard} />}
-          {activeMenu === 'store' && <StorePage store={merchantData.store} onSubmit={submitStore} />}
+          {activeMenu === 'store' && <StorePage store={merchantData.store} onSubmit={submitStore} onNotify={showToast} />}
           {activeMenu === 'timesale' && (
             <TimeSalePage
               timeSales={merchantData.timeSales}
@@ -240,11 +286,13 @@ export function App() {
               onClose={closeTimeSale}
               editingTimeSaleId={editingTimeSaleId}
               onEditConsumed={() => setEditingTimeSaleId(null)}
+              onNotify={showToast}
             />
           )}
-          {activeMenu === 'promotion' && <PromotionPage promotions={merchantData.promotions} onSubmit={submitPromotion} />}
+          {activeMenu === 'promotion' && <PromotionPage promotions={merchantData.promotions} onSubmit={submitPromotion} onNotify={showToast} />}
         </section>
       </main>
+      <Toast toast={toast} onClose={() => setToast(null)} />
     </div>
   );
 }

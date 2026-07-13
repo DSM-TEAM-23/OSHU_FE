@@ -7,9 +7,11 @@ import { PromotionTable } from '../../../shared/ui/tables';
 export function PromotionPage({
   promotions,
   onSubmit,
+  onNotify,
 }: {
   promotions: PromotionDetail[];
-  onSubmit: (body: PromotionRequest) => Promise<void>;
+  onSubmit: (body: PromotionRequest) => Promise<string | undefined>;
+  onNotify: (message: string, type?: 'success' | 'error') => void;
 }) {
   const [form, setForm] = useState<PromotionRequest>({
     type: 'NEW_MENU',
@@ -27,8 +29,10 @@ export function PromotionPage({
   };
 
   const submit = async () => {
-    await onSubmit(form);
-    setMessage('등록되었습니다.');
+    const warning = await onSubmit(form);
+    const message = warning ? '화면에는 등록되었습니다.' : '등록되었습니다.';
+    setMessage(message);
+    onNotify(warning ?? '홍보 게시물을 등록했습니다.', warning ? 'error' : 'success');
     setIsModalOpen(false);
     setForm({ type: 'NEW_MENU', title: '', content: '', imageUrl: '', startAt: '', endAt: '' });
   };
