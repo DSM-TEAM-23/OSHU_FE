@@ -47,3 +47,31 @@ pnpm run build
 - 신규 회원가입: 빈 가게 데이터로 시작 후 `가게 등록` 화면 이동
 
 추후 API 연동 시 로그인 응답의 access token을 저장하고, `/me/store`, `/me/timesales`, `/me/promotions` 같은 점주 전용 API를 호출하도록 교체하면 됩니다.
+
+## Frontend Architecture
+
+`mozu-FE`의 레이어드 구조를 참고해 단일 앱에 맞게 아래처럼 정리했습니다.
+
+```text
+src/
+├─ app/                 # 앱 루트, 전역 상태, 화면 분기
+├─ pages/               # 라우트 단위 화면
+│  ├─ auth/
+│  ├─ dashboard/
+│  ├─ store/
+│  ├─ time-sale/
+│  └─ promotion/
+├─ entities/owner/      # 점주 도메인 타입, API, mock 데이터
+│  ├─ api/
+│  ├─ model/
+│  └─ types/
+├─ shared/              # 공용 UI와 포맷 유틸
+│  ├─ lib/
+│  └─ ui/
+└─ main.tsx
+```
+
+- `entities/owner/types`: OpenAPI 기준 요청/응답 타입
+- `entities/owner/api`: 점주센터에서 사용할 API 클라이언트
+- `pages/*/ui`: 화면 단위 컴포넌트
+- `shared/ui`: 테이블, 카드 등 재사용 UI

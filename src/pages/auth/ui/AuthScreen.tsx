@@ -1,0 +1,220 @@
+import { useState } from 'react';
+import { ImagePlus } from 'lucide-react';
+import type { StoreCategory } from '../../../entities/owner/types';
+import type { AuthMode, SignupDraft } from '../../../entities/owner/types/ui';
+import { categoryOptions } from '../../../entities/owner/model/options';
+import { createEmptySignupDraft } from '../../../entities/owner/model/mockData';
+
+export function AuthScreen({
+  mode,
+  setMode,
+  onLogin,
+  onSignup,
+}: {
+  mode: AuthMode;
+  setMode: (mode: AuthMode) => void;
+  onLogin: (loginId: string, password: string) => boolean;
+  onSignup: (draft: SignupDraft) => void;
+}) {
+  const [loginId, setLoginId] = useState('oshu_bakery');
+  const [loginPassword, setLoginPassword] = useState('pass1234');
+  const [loginError, setLoginError] = useState('');
+  const [signupStep, setSignupStep] = useState(0);
+  const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
+  const [draft, setDraft] = useState<SignupDraft>(createEmptySignupDraft());
+
+  const signupSteps = ['계정 정보', '사업자 정보', '가게 정보', '운영 정보'];
+
+  const updateDraft = (patch: Partial<SignupDraft>) => {
+    setDraft((prev) => ({ ...prev, ...patch }));
+  };
+
+  const submitLogin = () => {
+    const success = onLogin(loginId, loginPassword);
+    setLoginError(success ? '' : '계정ID 또는 비밀번호를 확인해주세요.');
+  };
+
+  const canGoNext = () => {
+    if (signupStep === 0) return draft.loginId && draft.password && draft.password === draft.passwordConfirm;
+    if (signupStep === 1) return draft.businessNumber && draft.name && draft.category;
+    if (signupStep === 2) return draft.address && draft.phone && draft.description;
+    return draft.openingHours;
+  };
+
+  const openSignupModal = () => {
+    setSignupStep(0);
+    setIsSignupModalOpen(true);
+  };
+
+  const closeSignupModal = () => {
+    setIsSignupModalOpen(false);
+  };
+
+  const submitSignup = () => {
+    if (!canGoNext()) return;
+    onSignup(draft);
+  };
+
+  return (
+    <main className="auth-page">
+      <section className="auth-card wide-auth-card">
+        <div className="brand auth-brand">
+          <div className="brand-mark">O</div>
+          <div>
+            <strong>OSHU</strong>
+            <span>점주센터</span>
+          </div>
+        </div>
+
+        <div className="auth-tabs">
+          <button className={mode === 'login' ? 'active' : ''} onClick={() => setMode('login')}>로그인</button>
+          <button className={mode === 'signup' ? 'active' : ''} onClick={() => setMode('signup')}>회원가입</button>
+        </div>
+
+        {mode === 'login' ? (
+          <div className="auth-form">
+            <label>
+              계정 ID
+              <input value={loginId} onChange={(event) => setLoginId(event.target.value)} placeholder="계정 ID를 입력하세요" />
+            </label>
+            <label>
+              비밀번호
+              <input type="password" value={loginPassword} onChange={(event) => setLoginPassword(event.target.value)} placeholder="비밀번호를 입력하세요" />
+            </label>
+            {loginError && <p className="form-error">{loginError}</p>}
+            <button className="primary-button auth-submit" onClick={submitLogin}>로그인</button>
+            <p className="auth-help">로그인 성공 후 발급된 토큰 기준으로 해당 점주의 가게 정보만 불러옵니다.</p>
+          </div>
+        ) : (
+          <div className="signup-entry">
+            <div className="signup-entry-copy compact">
+              <h2>회원가입</h2>
+            </div>
+            <div className="signup-entry-list">
+              {signupSteps.map((step, index) => (
+                <div className="signup-entry-item" key={step}>
+                  <span>{index + 1}</span>
+                  <strong>{step}</strong>
+                </div>
+              ))}
+            </div>
+            <button className="primary-button auth-submit" onClick={openSignupModal}>회원가입 시작</button>
+          </div>
+        )}
+
+        {isSignupModalOpen && (
+          <div className="modal-backdrop" role="presentation">
+            <section className="signup-modal" role="dialog" aria-modal="true" aria-label="회원가입 단계 입력">
+              <header className="modal-header">
+                <div>
+                  <p className="eyebrow">Step {signupStep + 1} of {signupSteps.length}</p>
+                  <h3>{signupSteps[signupStep]}</h3>
+                </div>
+                <button className="modal-close" onClick={closeSignupModal} aria-label="회원가입 모달 닫기">×</button>
+              </header>
+
+              <div className="modal-progress">
+                {signupSteps.map((step, index) => (
+                  <span key={step} className={index === signupStep ? 'active' : index < signupStep ? 'done' : ''} />
+                ))}
+              </div>
+
+              {signupStep === 0 && (
+                <div className="auth-form two-col-auth modal-body">
+                  <label>
+                    계정 ID *
+                    <input value={draft.loginId} onChange={(event) => updateDraft({ loginId: event.target.value })} placeholder="예: oshu_owner01" />
+                  </label>
+                  <label>
+                    비밀번호 *
+                    <input type="password" value={draft.password} onChange={(event) => updateDraft({ password: event.target.value })} />
+                  </label>
+                  <label className="wide">
+                    비밀번호 확인 *
+                    <input type="password" value={draft.passwordConfirm} onChange={(event) => updateDraft({ passwordConfirm: event.target.value })} />
+                  </label>
+                </div>
+              )}
+
+              {signupStep === 1 && (
+                <div className="auth-form two-col-auth modal-body">
+                  <label>
+                    사업자등록번호 *
+                    <input value={draft.businessNumber} onChange={(event) => updateDraft({ businessNumber: event.target.value })} placeholder="000-00-00000" />
+                  </label>
+                  <label>
+                    상호명 *
+                    <input value={draft.name} onChange={(event) => updateDraft({ name: event.target.value })} placeholder="사업자등록증 상 상호" />
+                  </label>
+                  <label className="wide">
+                    업종 *
+                    <select value={draft.category} onChange={(event) => updateDraft({ category: event.target.value as StoreCategory })}>
+                      {categoryOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                    </select>
+                  </label>
+                </div>
+              )}
+
+              {signupStep === 2 && (
+                <div className="auth-form two-col-auth modal-body">
+                  <label className="wide">
+                    가게 주소 *
+                    <input value={draft.address} onChange={(event) => updateDraft({ address: event.target.value })} placeholder="도로명 주소를 입력하세요" />
+                  </label>
+                  <label>
+                    가게 연락처 *
+                    <input value={draft.phone} onChange={(event) => updateDraft({ phone: event.target.value })} placeholder="042-000-0000" />
+                  </label>
+                  <label>
+                    대표 이미지
+                    <button className="field-button" type="button">
+                      <ImagePlus size={16} />
+                      추후 업로드
+                    </button>
+                  </label>
+                  <label className="wide">
+                    가게 소개 *
+                    <textarea value={draft.description} onChange={(event) => updateDraft({ description: event.target.value })} placeholder="앱 가게 상세에 표시될 소개를 입력하세요" />
+                  </label>
+                </div>
+              )}
+
+              {signupStep === 3 && (
+                <div className="auth-form two-col-auth modal-body">
+                  <label>
+                    영업시간 *
+                    <input value={draft.openingHours} onChange={(event) => updateDraft({ openingHours: event.target.value })} placeholder="예: 09:00-21:00" />
+                  </label>
+                  <label>
+                    지도 위도 *
+                    <input type="number" value={draft.latitude} onChange={(event) => updateDraft({ latitude: Number(event.target.value) })} />
+                  </label>
+                  <label>
+                    지도 경도 *
+                    <input type="number" value={draft.longitude} onChange={(event) => updateDraft({ longitude: Number(event.target.value) })} />
+                  </label>
+                  <div className="signup-summary wide">
+                    <strong>가입 후 처리</strong>
+                    <p>회원가입 후 `/auth/signup`으로 계정을 만들고, `/owner/stores`로 가게 등록 요청을 보냅니다.</p>
+                  </div>
+                </div>
+              )}
+
+              <footer className="modal-actions">
+                <button className="ghost-button" onClick={closeSignupModal}>취소</button>
+                <div>
+                  <button className="ghost-button" disabled={signupStep === 0} onClick={() => setSignupStep((prev) => Math.max(0, prev - 1))}>이전</button>
+                  {signupStep < signupSteps.length - 1 ? (
+                    <button className="primary-button" disabled={!canGoNext()} onClick={() => setSignupStep((prev) => prev + 1)}>다음</button>
+                  ) : (
+                    <button className="primary-button" disabled={!canGoNext()} onClick={submitSignup}>회원가입 완료</button>
+                  )}
+                </div>
+              </footer>
+            </section>
+          </div>
+        )}
+      </section>
+    </main>
+  );
+}

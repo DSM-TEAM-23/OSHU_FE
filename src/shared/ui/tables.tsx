@@ -1,0 +1,47 @@
+import type { PromotionDetail, TimeSale } from '../../entities/owner/types';
+import { formatPeriod, formatPrice, promotionTypeLabel, statusLabel } from '../lib/format';
+
+export function TimeSaleTable({ items, compact = false }: { items: TimeSale[]; compact?: boolean }) {
+  return (
+    <div className="data-table-wrap">
+      <table className="data-table">
+        <thead><tr><th>상태</th><th>상품명</th>{!compact && <th>ID</th>}<th>가격</th><th>기간</th><th /></tr></thead>
+        <tbody>
+          {items.map((item) => (
+            <tr key={item.timeSaleId}>
+              <td><span className={`status-badge ${statusLabel(item.status)}`}>{statusLabel(item.status)}</span></td>
+              <td><strong>{item.productName}</strong><p>{item.notice}</p></td>
+              {!compact && <td>{item.timeSaleId}</td>}
+              <td><span className="price-pair"><del>{formatPrice(item.originalPrice)}</del>{formatPrice(item.salePrice)}</span></td>
+              <td>{formatPeriod(item.startAt, item.endAt)}</td>
+              <td><button className="table-button">수정</button></td>
+            </tr>
+          ))}
+          {items.length === 0 && <tr><td colSpan={compact ? 5 : 6} className="empty-cell">등록된 타임세일이 없습니다.</td></tr>}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+export function PromotionTable({ items }: { items: PromotionDetail[] }) {
+  return (
+    <div className="data-table-wrap">
+      <table className="data-table">
+        <thead><tr><th>상태</th><th>유형</th><th>제목</th><th>노출 기간</th><th /></tr></thead>
+        <tbody>
+          {items.map((item) => (
+            <tr key={item.promotionId}>
+              <td><span className={`status-badge ${statusLabel(item.status)}`}>{statusLabel(item.status)}</span></td>
+              <td>{promotionTypeLabel(item.type)}</td>
+              <td><strong>{item.title}</strong><p>{item.content}</p></td>
+              <td>{formatPeriod(item.startAt, item.endAt)}</td>
+              <td><button className="table-button">수정</button></td>
+            </tr>
+          ))}
+          {items.length === 0 && <tr><td colSpan={5} className="empty-cell">등록된 홍보 게시물이 없습니다.</td></tr>}
+        </tbody>
+      </table>
+    </div>
+  );
+}
