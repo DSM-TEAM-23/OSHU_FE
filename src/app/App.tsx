@@ -25,6 +25,7 @@ export function App() {
   const [merchantData, setMerchantData] = useState<MerchantData | null>(null);
   const [authMode, setAuthMode] = useState<AuthMode>('login');
   const [activeMenu, setActiveMenu] = useState<MenuKey>('dashboard');
+  const [editingTimeSaleId, setEditingTimeSaleId] = useState<number | null>(null);
 
   const pageTitle = useMemo(
     () => menuItems.find((item) => item.key === activeMenu)?.label ?? '대시보드',
@@ -135,6 +136,15 @@ export function App() {
     } : prev));
   };
 
+  const updateTimeSale = async (timeSaleId: number, body: TimeSaleRequest) => {
+    if (!session) return;
+    await ownerApi.updateTimeSale(session.accessToken, timeSaleId, body).catch(() => undefined);
+    setMerchantData((prev) => (prev ? {
+      ...prev,
+      timeSales: prev.timeSales.map((item) => item.timeSaleId === timeSaleId ? { ...item, ...body } : item),
+    } : prev));
+  };
+
   const submitPromotion = async (body: PromotionRequest) => {
     if (!session || !merchantData?.store?.storeId) return;
     const created = await ownerApi.createPromotion(session.accessToken, merchantData.store.storeId, body).catch(() => undefined);
@@ -154,6 +164,11 @@ export function App() {
   };
 
   const openTimeSalePage = () => {
+    setActiveMenu('timesale');
+  };
+
+  const editTimeSaleFromDashboard = (timeSaleId: number) => {
+    setEditingTimeSaleId(timeSaleId);
     setActiveMenu('timesale');
   };
 
@@ -192,9 +207,18 @@ export function App() {
         </header>
 
         <section className="workspace">
-          {activeMenu === 'dashboard' && <DashboardPage merchantData={merchantData} setActiveMenu={setActiveMenu} />}
+          {activeMenu === 'dashboard' && <DashboardPage merchantData={merchantData} setActiveMenu={setActiveMenu} onEditTimeSale={editTimeSaleFromDashboard} />}
           {activeMenu === 'store' && <StorePage store={merchantData.store} onSubmit={submitStore} />}
-          {activeMenu === 'timesale' && <TimeSalePage timeSales={merchantData.timeSales} onSubmit={submitTimeSale} onClose={closeTimeSale} />}
+          {activeMenu === 'timesale' && (
+            <TimeSalePage
+              timeSales={merchantData.timeSales}
+              onSubmit={submitTimeSale}
+              onUpdate={updateTimeSale}
+              onClose={closeTimeSale}
+              editingTimeSaleId={editingTimeSaleId}
+              onEditConsumed={() => setEditingTimeSaleId(null)}
+            />
+          )}
           {activeMenu === 'promotion' && <PromotionPage promotions={merchantData.promotions} onSubmit={submitPromotion} />}
         </section>
       </main>

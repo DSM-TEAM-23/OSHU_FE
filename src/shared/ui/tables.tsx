@@ -1,7 +1,17 @@
 import type { PromotionDetail, TimeSale } from '../../entities/owner/types';
 import { formatPeriod, formatPrice, promotionTypeLabel, statusLabel } from '../lib/format';
 
-export function TimeSaleTable({ items, compact = false, onClose }: { items: TimeSale[]; compact?: boolean; onClose?: (timeSaleId: number) => void }) {
+export function TimeSaleTable({
+  items,
+  compact = false,
+  onClose,
+  onEdit,
+}: {
+  items: TimeSale[];
+  compact?: boolean;
+  onClose?: (timeSaleId: number) => void;
+  onEdit?: (item: TimeSale) => void;
+}) {
   return (
     <div className="data-table-wrap">
       <table className="data-table">
@@ -14,7 +24,12 @@ export function TimeSaleTable({ items, compact = false, onClose }: { items: Time
               {!compact && <td>{item.timeSaleId}</td>}
               <td><span className="price-pair"><del>{formatPrice(item.originalPrice)}</del>{formatPrice(item.salePrice)}</span></td>
               <td>{formatPeriod(item.startAt, item.endAt)}</td>
-              <td>{onClose ? <button className="table-button" onClick={() => onClose(item.timeSaleId)}>종료</button> : <button className="table-button">수정</button>}</td>
+              <td>
+                <div className="table-actions">
+                  {onEdit && <button className="table-button" onClick={() => onEdit(item)}>수정</button>}
+                  {onClose && <button className="table-button" onClick={() => onClose(item.timeSaleId)}>종료</button>}
+                </div>
+              </td>
             </tr>
           ))}
           {items.length === 0 && <tr><td colSpan={compact ? 5 : 6} className="empty-cell">등록된 타임세일이 없습니다.</td></tr>}

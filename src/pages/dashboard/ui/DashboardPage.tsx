@@ -3,7 +3,15 @@ import type { MerchantData, MenuKey } from '../../../entities/owner/types/ui';
 import { TimeSaleTable } from '../../../shared/ui/tables';
 import { storeStatusLabel } from '../../../shared/lib/format';
 
-export function DashboardPage({ merchantData, setActiveMenu }: { merchantData: MerchantData; setActiveMenu: (menu: MenuKey) => void }) {
+export function DashboardPage({
+  merchantData,
+  setActiveMenu,
+  onEditTimeSale,
+}: {
+  merchantData: MerchantData;
+  setActiveMenu: (menu: MenuKey) => void;
+  onEditTimeSale: (timeSaleId: number) => void;
+}) {
   const activeTimeSale = merchantData.timeSales.find((item) => item.status === 'ACTIVE');
   const scheduledTimeSaleCount = merchantData.timeSales.filter((item) => item.status === 'SCHEDULED').length;
 
@@ -50,7 +58,7 @@ export function DashboardPage({ merchantData, setActiveMenu }: { merchantData: M
           <div><p className="eyebrow">최근 행사</p><h3>타임세일</h3></div>
           <button className="ghost-button" onClick={() => setActiveMenu('timesale')}>전체 보기</button>
         </div>
-        <TimeSaleTable items={merchantData.timeSales} compact />
+        <TimeSaleTable items={merchantData.timeSales} compact onEdit={(item) => onEditTimeSale(item.timeSaleId)} />
       </section>
     </div>
   );

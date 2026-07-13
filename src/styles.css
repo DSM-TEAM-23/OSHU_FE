@@ -689,6 +689,13 @@ select:focus {
   font-weight: 700;
 }
 
+.table-actions {
+  display: inline-flex;
+  gap: 6px;
+  justify-content: flex-end;
+  white-space: nowrap;
+}
+
 @media (max-width: 1280px) {
   body {
     min-width: 1000px;
