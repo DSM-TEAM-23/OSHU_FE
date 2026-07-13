@@ -17,6 +17,8 @@ export type MockAccount = LoginRequest & {
 export type SignupDraft = LoginRequest &
   CreateStoreRequest & {
     passwordConfirm: string;
+    openingTime: string;
+    closingTime: string;
   };
 
 export type MerchantData = {

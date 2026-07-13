@@ -38,7 +38,7 @@ export function AuthScreen({
     if (signupStep === 0) return draft.loginId && draft.password && draft.password === draft.passwordConfirm;
     if (signupStep === 1) return draft.businessNumber && draft.name && draft.category;
     if (signupStep === 2) return draft.address && draft.phone && draft.description;
-    return draft.openingHours;
+    return draft.openingTime && draft.closingTime;
   };
 
   const openSignupModal = () => {
@@ -182,8 +182,12 @@ export function AuthScreen({
               {signupStep === 3 && (
                 <div className="auth-form two-col-auth modal-body">
                   <label>
-                    영업시간 *
-                    <input value={draft.openingHours} onChange={(event) => updateDraft({ openingHours: event.target.value })} placeholder="예: 09:00-21:00" />
+                    오픈 시간 *
+                    <input type="time" value={draft.openingTime} onChange={(event) => updateDraft({ openingTime: event.target.value })} />
+                  </label>
+                  <label>
+                    마감 시간 *
+                    <input type="time" value={draft.closingTime} onChange={(event) => updateDraft({ closingTime: event.target.value })} />
                   </label>
                   <label>
                     지도 위도 *

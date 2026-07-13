@@ -18,6 +18,7 @@ export const merchantByToken: Record<string, MerchantData> = {
       address: '대전광역시 유성구 궁동로 123',
       phone: '042-123-4567',
       openingHours: '09:00-21:00',
+      congestionStatus: 'NORMAL',
       imageUrls: [],
     },
     timeSales: [
@@ -69,6 +70,7 @@ export const merchantByToken: Record<string, MerchantData> = {
       address: '대전광역시 유성구 대학로 45',
       phone: '042-987-6543',
       openingHours: '11:00-22:00',
+      congestionStatus: 'BUSY',
       imageUrls: [],
     },
     timeSales: [
@@ -105,4 +107,6 @@ export const createEmptySignupDraft = (): SignupDraft => ({
   longitude: 127.3441,
   phone: '',
   openingHours: '',
+  openingTime: '',
+  closingTime: '',
 });

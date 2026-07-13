@@ -1,7 +1,7 @@
 import { Megaphone, Store, Tag } from 'lucide-react';
 import type { MerchantData, MenuKey } from '../../../entities/owner/types/ui';
 import { TimeSaleTable } from '../../../shared/ui/tables';
-import { storeStatusLabel } from '../../../shared/lib/format';
+import { congestionLabel, storeStatusLabel } from '../../../shared/lib/format';
 
 export function DashboardPage({
   merchantData,
@@ -23,7 +23,12 @@ export function DashboardPage({
             <p className="eyebrow">오늘의 관리</p>
             <h2>{merchantData.store?.name || '가게 등록 필요'}</h2>
           </div>
-          <span className="plain-badge">{storeStatusLabel(merchantData.store?.status)}</span>
+          <div className="profile-badges">
+            <span className="plain-badge">{storeStatusLabel(merchantData.store?.status)}</span>
+            <span className={`plain-badge congestion-${merchantData.store?.congestionStatus ?? 'RELAXED'}`}>
+              {congestionLabel(merchantData.store?.congestionStatus)}
+            </span>
+          </div>
         </div>
 
         <div className="metric-row">

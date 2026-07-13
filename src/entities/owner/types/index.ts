@@ -1,5 +1,6 @@
 export type StoreCategory = 'FOOD' | 'CAFE' | 'BAKERY' | 'MART' | 'MARKET';
 export type StoreApprovalStatus = 'PENDING_APPROVAL' | 'ACTIVE' | 'REJECTED';
+export type StoreCongestionStatus = 'VERY_BUSY' | 'BUSY' | 'NORMAL' | 'RELAXED';
 export type PromotionType = 'DISCOUNT' | 'EVENT' | 'NEW_MENU' | 'NOTICE';
 export type PromotionStatus = 'SCHEDULED' | 'ACTIVE' | 'ENDED' | 'SOLD_OUT';
 export type TimeSaleStatus = 'SCHEDULED' | 'ACTIVE' | 'ENDED' | 'SOLD_OUT';
@@ -58,6 +59,7 @@ export type StoreDetail = OwnerStore & {
   address: string;
   phone?: string;
   openingHours?: string;
+  congestionStatus?: StoreCongestionStatus;
   imageUrls?: string[];
 };
 

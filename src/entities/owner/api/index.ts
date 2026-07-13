@@ -24,7 +24,8 @@ async function request<TResponse>(path: string, options: RequestInit = {}): Prom
   });
 
   if (!response.ok) {
-    throw new Error(`API request failed: ${response.status}`);
+    const errorText = await response.text().catch(() => '');
+    throw new Error(errorText ? `API request failed: ${response.status} ${errorText}` : `API request failed: ${response.status}`);
   }
 
   if (response.status === 204) {

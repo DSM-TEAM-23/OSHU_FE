@@ -1,4 +1,4 @@
-import type { PromotionDetail, PromotionRequest, StoreApprovalStatus, TimeSale } from '../../entities/owner/types';
+import type { PromotionDetail, PromotionRequest, StoreApprovalStatus, StoreCongestionStatus, TimeSale } from '../../entities/owner/types';
 
 export const formatPrice = (price: number) => `${price.toLocaleString()}원`;
 
@@ -9,6 +9,13 @@ export function storeStatusLabel(status?: StoreApprovalStatus) {
   if (status === 'ACTIVE') return '승인 완료';
   if (status === 'REJECTED') return '반려';
   return '검토중';
+}
+
+export function congestionLabel(status?: StoreCongestionStatus) {
+  if (status === 'VERY_BUSY') return '매우 혼잡';
+  if (status === 'BUSY') return '혼잡';
+  if (status === 'NORMAL') return '보통';
+  return '여유';
 }
 
 export function promotionTypeLabel(type: PromotionDetail['type'] | PromotionRequest['type']) {

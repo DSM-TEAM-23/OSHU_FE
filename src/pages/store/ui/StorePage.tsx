@@ -1,17 +1,36 @@
 import { useState } from 'react';
 import { MapPin, Pencil, Save, Store } from 'lucide-react';
-import type { CreateStoreRequest, StoreCategory, StoreDetail } from '../../../entities/owner/types';
+import type { CreateStoreRequest, StoreCategory, StoreCongestionStatus, StoreDetail } from '../../../entities/owner/types';
 import { categoryOptions } from '../../../entities/owner/model/options';
-import { storeStatusLabel } from '../../../shared/lib/format';
+import { congestionLabel, storeStatusLabel } from '../../../shared/lib/format';
+
+const congestionOptions: Array<{ value: StoreCongestionStatus; label: string }> = [
+  { value: 'VERY_BUSY', label: '매우 혼잡' },
+  { value: 'BUSY', label: '혼잡' },
+  { value: 'NORMAL', label: '보통' },
+  { value: 'RELAXED', label: '여유' },
+];
+
+const splitOpeningHours = (openingHours?: string) => {
+  const [openingTime = '', closingTime = ''] = openingHours?.split('-') ?? [];
+  return { openingTime, closingTime };
+};
+
+type StoreFormState = CreateStoreRequest & {
+  openingTime: string;
+  closingTime: string;
+  congestionStatus: StoreCongestionStatus;
+};
 
 export function StorePage({
   store,
   onSubmit,
 }: {
   store: StoreDetail | null;
-  onSubmit: (body: CreateStoreRequest) => Promise<void>;
+  onSubmit: (body: CreateStoreRequest, extra: { congestionStatus: StoreCongestionStatus }) => Promise<void>;
 }) {
-  const [form, setForm] = useState<CreateStoreRequest>({
+  const initialHours = splitOpeningHours(store?.openingHours);
+  const [form, setForm] = useState<StoreFormState>({
     name: store?.name ?? '',
     businessNumber: store?.businessNumber ?? '',
     category: store?.category ?? 'BAKERY',
@@ -21,16 +40,21 @@ export function StorePage({
     description: store?.description ?? '',
     phone: store?.phone ?? '',
     openingHours: store?.openingHours ?? '',
+    openingTime: initialHours.openingTime,
+    closingTime: initialHours.closingTime,
+    congestionStatus: store?.congestionStatus ?? 'RELAXED',
   });
   const [message, setMessage] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(!store);
 
-  const updateForm = (patch: Partial<CreateStoreRequest>) => {
+  const updateForm = (patch: Partial<StoreFormState>) => {
     setForm((prev) => ({ ...prev, ...patch }));
   };
 
   const submit = async () => {
-    await onSubmit(form);
+    const openingHours = form.openingTime && form.closingTime ? `${form.openingTime}-${form.closingTime}` : form.openingHours;
+    const { openingTime, closingTime, congestionStatus, ...requestBody } = form;
+    await onSubmit({ ...requestBody, openingHours }, { congestionStatus });
     setMessage('저장되었습니다.');
     setIsModalOpen(false);
   };
@@ -51,7 +75,10 @@ export function StorePage({
               <p>{categoryOptions.find((option) => option.value === store.category)?.label} · {store.phone || '연락처 미입력'}</p>
               <p><MapPin size={14} />{store.address}</p>
             </div>
-            <span className="plain-badge">{storeStatusLabel(store.status)}</span>
+            <div className="profile-badges">
+              <span className="plain-badge">{storeStatusLabel(store.status)}</span>
+              <span className={`plain-badge congestion-${store.congestionStatus ?? 'RELAXED'}`}>{congestionLabel(store.congestionStatus)}</span>
+            </div>
           </div>
         ) : (
           <div className="empty-state">
@@ -86,7 +113,23 @@ export function StorePage({
               <label className="wide">주소 *<input value={form.address} onChange={(event) => updateForm({ address: event.target.value })} /></label>
               <label>위도 *<input type="number" value={form.latitude} onChange={(event) => updateForm({ latitude: Number(event.target.value) })} /></label>
               <label>경도 *<input type="number" value={form.longitude} onChange={(event) => updateForm({ longitude: Number(event.target.value) })} /></label>
-              <label>영업시간<input value={form.openingHours ?? ''} onChange={(event) => updateForm({ openingHours: event.target.value })} /></label>
+              <label>오픈 시간<input type="time" value={form.openingTime} onChange={(event) => updateForm({ openingTime: event.target.value })} /></label>
+              <label>마감 시간<input type="time" value={form.closingTime} onChange={(event) => updateForm({ closingTime: event.target.value })} /></label>
+              <div className="wide">
+                <p className="field-title">가게 혼잡도</p>
+                <div className="segmented-control">
+                  {congestionOptions.map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      className={form.congestionStatus === option.value ? 'active' : ''}
+                      onClick={() => updateForm({ congestionStatus: option.value })}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <label className="wide">가게 소개<textarea value={form.description ?? ''} onChange={(event) => updateForm({ description: event.target.value })} /></label>
             </div>
 

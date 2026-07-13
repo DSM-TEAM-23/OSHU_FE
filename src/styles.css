@@ -1059,6 +1059,13 @@ button:disabled {
   background: var(--surface-muted);
 }
 
+.profile-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
 .profile-mark {
   display: grid;
   width: 54px;
@@ -1095,6 +1102,67 @@ button:disabled {
   background: #fff;
   font-size: 12px;
   font-weight: 750;
+}
+
+.plain-badge.congestion-VERY_BUSY {
+  color: #b42318;
+  border-color: #ffd6d2;
+  background: #fff4f2;
+}
+
+.plain-badge.congestion-BUSY {
+  color: #b54708;
+  border-color: #fedf89;
+  background: #fffaeb;
+}
+
+.plain-badge.congestion-NORMAL {
+  color: #175cd3;
+  border-color: #c7d7fe;
+  background: #eff4ff;
+}
+
+.plain-badge.congestion-RELAXED {
+  color: var(--success);
+  border-color: #bfe7d1;
+  background: #f0fbf5;
+}
+
+.field-title {
+  margin: 0 0 7px;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.segmented-control {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border: 1px solid var(--border-strong);
+  background: #fff;
+}
+
+.segmented-control button {
+  min-height: 42px;
+  color: var(--text);
+  border: 0;
+  border-right: 1px solid var(--border);
+  background: transparent;
+  font-weight: 750;
+}
+
+.segmented-control button:last-child {
+  border-right: 0;
+}
+
+.segmented-control button:hover {
+  background: var(--surface-muted);
+}
+
+.segmented-control button.active,
+.segmented-control button.active:hover {
+  color: var(--primary-dark);
+  background: var(--primary-light);
 }
 
 .empty-state {

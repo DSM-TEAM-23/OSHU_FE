@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { LogOut, Plus, Store } from 'lucide-react';
-import type { CreateStoreRequest, PromotionDetail, PromotionRequest, StoreDetail, TimeSale, TimeSaleRequest } from '../entities/owner/types';
+import type { CreateStoreRequest, PromotionDetail, PromotionRequest, StoreCongestionStatus, StoreDetail, TimeSale, TimeSaleRequest } from '../entities/owner/types';
 import type { AuthMode, MenuKey, MerchantData, MockAccount, Session, SignupDraft } from '../entities/owner/types/ui';
 import { createEmptyMerchantData, initialAccounts, merchantByToken } from '../entities/owner/model/mockData';
 import { ownerApi } from '../entities/owner/api';
@@ -18,6 +18,20 @@ const menuItems = [
   { key: 'timesale' as const, label: '타임세일', icon: Tag },
   { key: 'promotion' as const, label: '가게 홍보 등록', icon: Megaphone },
 ];
+
+const getRequestFailureMessage = (error: unknown) => {
+  const rawMessage = error instanceof Error ? error.message : '알 수 없는 오류';
+  if (rawMessage.includes('Failed to fetch')) {
+    return '서버 요청이 브라우저에서 차단되었습니다. API 서버 CORS 또는 네트워크 설정을 확인해야 합니다.';
+  }
+  if (rawMessage.includes('401') || rawMessage.includes('403')) {
+    return '서버가 요청을 거절했습니다. 실제 로그인 토큰으로 다시 확인해야 합니다.';
+  }
+  if (rawMessage.includes('404')) {
+    return '서버에서 해당 타임세일을 찾지 못했습니다. 더미 ID와 서버 ID가 다를 수 있습니다.';
+  }
+  return rawMessage;
+};
 
 export function App() {
   const [accounts, setAccounts] = useState<MockAccount[]>(initialAccounts);
@@ -47,6 +61,7 @@ export function App() {
   const handleSignup = (draft: SignupDraft) => {
     const accessToken = `mock-token-new-${Date.now()}`;
     const refreshToken = `mock-refresh-${Date.now()}`;
+    const openingHours = `${draft.openingTime}-${draft.closingTime}`;
     const nextStore: StoreDetail = {
       storeId: Date.now(),
       name: draft.name,
@@ -55,7 +70,8 @@ export function App() {
       description: draft.description,
       address: draft.address,
       phone: draft.phone,
-      openingHours: draft.openingHours,
+      openingHours,
+      congestionStatus: 'RELAXED',
       status: 'PENDING_APPROVAL',
       activePromotionCount: 0,
       imageUrls: [],
@@ -71,7 +87,7 @@ export function App() {
         latitude: draft.latitude,
         longitude: draft.longitude,
         phone: draft.phone,
-        openingHours: draft.openingHours,
+        openingHours,
       }))
       .catch(() => undefined);
 
@@ -92,7 +108,7 @@ export function App() {
     setMerchantData((prev) => (prev ? { ...prev, store: prev.store ? { ...prev.store, ...patch } : null } : prev));
   };
 
-  const submitStore = async (body: CreateStoreRequest) => {
+  const submitStore = async (body: CreateStoreRequest, extra?: { congestionStatus: StoreCongestionStatus }) => {
     if (!session) return;
 
     if (merchantData?.store?.storeId) {
@@ -101,7 +117,7 @@ export function App() {
         phone: body.phone,
         openingHours: body.openingHours,
       }).catch(() => undefined);
-      updateStore(body);
+      updateStore({ ...body, congestionStatus: extra?.congestionStatus });
       return;
     }
 
@@ -111,6 +127,7 @@ export function App() {
       status: 'PENDING_APPROVAL',
       activePromotionCount: 0,
       imageUrls: [],
+      congestionStatus: extra?.congestionStatus ?? 'RELAXED',
       ...body,
     };
     setMerchantData((prev) => (prev ? { ...prev, store: nextStore } : prev));
@@ -138,11 +155,17 @@ export function App() {
 
   const updateTimeSale = async (timeSaleId: number, body: TimeSaleRequest) => {
     if (!session) return;
-    await ownerApi.updateTimeSale(session.accessToken, timeSaleId, body).catch(() => undefined);
+    let warning: string | undefined;
+    try {
+      await ownerApi.updateTimeSale(session.accessToken, timeSaleId, body);
+    } catch (error) {
+      warning = getRequestFailureMessage(error);
+    }
     setMerchantData((prev) => (prev ? {
       ...prev,
       timeSales: prev.timeSales.map((item) => item.timeSaleId === timeSaleId ? { ...item, ...body } : item),
     } : prev));
+    return warning;
   };
 
   const submitPromotion = async (body: PromotionRequest) => {

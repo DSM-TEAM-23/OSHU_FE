@@ -13,7 +13,7 @@ export function TimeSalePage({
 }: {
   timeSales: TimeSale[];
   onSubmit: (body: TimeSaleRequest) => Promise<void>;
-  onUpdate: (timeSaleId: number, body: TimeSaleRequest) => Promise<void>;
+  onUpdate: (timeSaleId: number, body: TimeSaleRequest) => Promise<string | undefined>;
   onClose: (timeSaleId: number) => Promise<void>;
   editingTimeSaleId?: number | null;
   onEditConsumed?: () => void;
@@ -27,6 +27,7 @@ export function TimeSalePage({
     notice: '',
   });
   const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
 
@@ -59,11 +60,13 @@ export function TimeSalePage({
 
   const submit = async () => {
     if (editingId) {
-      await onUpdate(editingId, form);
-      setMessage('수정되었습니다.');
+      const warning = await onUpdate(editingId, form);
+      setMessage(warning ? '화면에는 수정되었습니다.' : '수정되었습니다.');
+      setError(warning ?? '');
     } else {
       await onSubmit(form);
       setMessage('등록되었습니다.');
+      setError('');
     }
     setIsModalOpen(false);
     resetForm();
@@ -85,6 +88,7 @@ export function TimeSalePage({
         </div>
         <TimeSaleTable items={timeSales} onEdit={openEditModal} onClose={onClose} />
         {message && <p className="form-success">{message}</p>}
+        {error && <p className="form-error">{error}</p>}
       </section>
 
       {isModalOpen && (
