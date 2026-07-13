@@ -83,7 +83,7 @@ export function AuthScreen({
             </label>
             {loginError && <p className="form-error">{loginError}</p>}
             <button className="primary-button auth-submit" onClick={submitLogin}>로그인</button>
-            <p className="auth-help">로그인 성공 후 발급된 토큰 기준으로 해당 점주의 가게 정보만 불러옵니다.</p>
+            <p className="auth-help">로그인한 계정의 가게만 관리할 수 있습니다.</p>
           </div>
         ) : (
           <div className="signup-entry">
@@ -174,7 +174,7 @@ export function AuthScreen({
                   </label>
                   <label className="wide">
                     가게 소개 *
-                    <textarea value={draft.description} onChange={(event) => updateDraft({ description: event.target.value })} placeholder="앱 가게 상세에 표시될 소개를 입력하세요" />
+                    <textarea value={draft.description} onChange={(event) => updateDraft({ description: event.target.value })} placeholder="가게 소개를 입력하세요" />
                   </label>
                 </div>
               )}
@@ -194,8 +194,8 @@ export function AuthScreen({
                     <input type="number" value={draft.longitude} onChange={(event) => updateDraft({ longitude: Number(event.target.value) })} />
                   </label>
                   <div className="signup-summary wide">
-                    <strong>가입 후 처리</strong>
-                    <p>회원가입 후 `/auth/signup`으로 계정을 만들고, `/owner/stores`로 가게 등록 요청을 보냅니다.</p>
+                    <strong>검토 안내</strong>
+                    <p>등록이 완료되면 가게 정보는 검토중 상태로 저장됩니다.</p>
                   </div>
                 </div>
               )}

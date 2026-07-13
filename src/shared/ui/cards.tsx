@@ -41,7 +41,3 @@ export function QuickAction({
     </button>
   );
 }
-
-export function ValidationCard({ title, items }: { title: string; items: string[] }) {
-  return <aside className="card guide-card"><p className="eyebrow">API Scope</p><h3>{title}</h3><ul>{items.map((item) => <li key={item}>{item}</li>)}</ul></aside>;
-}

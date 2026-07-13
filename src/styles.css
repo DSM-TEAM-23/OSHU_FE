@@ -570,6 +570,11 @@ select:focus {
   background: #eeeeef;
 }
 
+.status-badge.품절 {
+  color: var(--danger);
+  background: #fff0f3;
+}
+
 .status-badge.검토중 {
   color: #5f52b8;
   background: #efedff;
@@ -949,4 +954,91 @@ button:disabled {
   color: var(--success);
   font-size: 12px;
   font-weight: 700;
+}
+
+.profile-summary {
+  display: grid;
+  grid-template-columns: 54px 1fr auto;
+  gap: 14px;
+  align-items: center;
+  padding: 18px;
+  border: 1px solid var(--border);
+  background: var(--surface-muted);
+}
+
+.profile-mark {
+  display: grid;
+  width: 54px;
+  height: 54px;
+  place-items: center;
+  color: var(--primary-dark);
+  border: 1px solid #ffd3de;
+  background: var(--primary-light);
+}
+
+.profile-summary strong {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 18px;
+  letter-spacing: -0.03em;
+}
+
+.profile-summary p {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 4px 0 0;
+  color: var(--text);
+  font-size: 13px;
+}
+
+.plain-badge {
+  display: inline-flex;
+  min-height: 30px;
+  align-items: center;
+  padding: 0 10px;
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  background: #fff;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.empty-state {
+  padding: 22px;
+  border: 1px dashed var(--border-strong);
+  background: var(--surface-muted);
+}
+
+.empty-state strong {
+  display: block;
+  margin-bottom: 6px;
+}
+
+.empty-state p {
+  margin: 0;
+  color: var(--text);
+  font-size: 13px;
+}
+
+.work-modal {
+  width: min(920px, calc(100vw - 56px));
+  max-height: min(800px, calc(100vh - 56px));
+  overflow: auto;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+}
+
+.work-modal .modal-body {
+  padding: 26px 28px;
+}
+
+.work-modal input,
+.work-modal textarea,
+.work-modal select {
+  min-height: 46px;
+}
+
+.work-modal textarea {
+  min-height: 132px;
 }
