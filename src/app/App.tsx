@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
-import { Bell, LogOut, Plus, Store } from 'lucide-react';
-import type { StoreDetail } from '../entities/owner/types';
+import { LogOut, Plus, Store } from 'lucide-react';
+import type { CreateStoreRequest, PromotionDetail, PromotionRequest, StoreDetail, TimeSale, TimeSaleRequest } from '../entities/owner/types';
 import type { AuthMode, MenuKey, MerchantData, MockAccount, Session, SignupDraft } from '../entities/owner/types/ui';
 import { createEmptyMerchantData, initialAccounts, merchantByToken } from '../entities/owner/model/mockData';
+import { ownerApi } from '../entities/owner/api';
 import { storeStatusLabel } from '../shared/lib/format';
 import { AuthScreen } from '../pages/auth/ui/AuthScreen';
 import { DashboardPage } from '../pages/dashboard/ui/DashboardPage';
@@ -35,6 +36,7 @@ export function App() {
 
     if (!account) return false;
 
+    void ownerApi.login({ loginId, password }).catch(() => undefined);
     setSession({ accessToken: account.accessToken, refreshToken: account.refreshToken, loginId: account.loginId });
     setMerchantData(merchantByToken[account.accessToken] ?? createEmptyMerchantData());
     setActiveMenu(merchantByToken[account.accessToken]?.store ? 'dashboard' : 'store');
@@ -58,6 +60,20 @@ export function App() {
       imageUrls: [],
     };
 
+    void ownerApi.signUp({ loginId: draft.loginId, password: draft.password })
+      .then(() => ownerApi.createStore(accessToken, {
+        name: draft.name,
+        businessNumber: draft.businessNumber,
+        category: draft.category,
+        description: draft.description,
+        address: draft.address,
+        latitude: draft.latitude,
+        longitude: draft.longitude,
+        phone: draft.phone,
+        openingHours: draft.openingHours,
+      }))
+      .catch(() => undefined);
+
     setAccounts((prev) => [...prev, { loginId: draft.loginId, password: draft.password, accessToken, refreshToken }]);
     setSession({ accessToken, refreshToken, loginId: draft.loginId });
     setMerchantData({ store: nextStore, timeSales: [], promotions: [] });
@@ -75,26 +91,69 @@ export function App() {
     setMerchantData((prev) => (prev ? { ...prev, store: prev.store ? { ...prev.store, ...patch } : null } : prev));
   };
 
-  const addTimeSale = () => {
-    setMerchantData((prev) => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        timeSales: [
-          {
-            timeSaleId: Date.now(),
-            productName: '당일 생산 베이커리',
-            originalPrice: 5000,
-            salePrice: 3500,
-            startAt: '2026-07-13T16:00:00',
-            endAt: '2026-07-13T17:00:00',
-            notice: '매장 방문 고객에 한함',
-            status: 'SCHEDULED',
-          },
-          ...prev.timeSales,
-        ],
-      };
-    });
+  const submitStore = async (body: CreateStoreRequest) => {
+    if (!session) return;
+
+    if (merchantData?.store?.storeId) {
+      await ownerApi.updateStore(session.accessToken, merchantData.store.storeId, {
+        description: body.description,
+        phone: body.phone,
+        openingHours: body.openingHours,
+      }).catch(() => undefined);
+      updateStore(body);
+      return;
+    }
+
+    await ownerApi.createStore(session.accessToken, body).catch(() => undefined);
+    const nextStore: StoreDetail = {
+      storeId: Date.now(),
+      status: 'PENDING_APPROVAL',
+      activePromotionCount: 0,
+      imageUrls: [],
+      ...body,
+    };
+    setMerchantData((prev) => (prev ? { ...prev, store: nextStore } : prev));
+  };
+
+  const submitTimeSale = async (body: TimeSaleRequest) => {
+    if (!session || !merchantData?.store?.storeId) return;
+    const created = await ownerApi.createTimeSale(session.accessToken, merchantData.store.storeId, body).catch(() => undefined);
+    const nextTimeSale: TimeSale = created ?? {
+      ...body,
+      timeSaleId: Date.now(),
+      status: 'SCHEDULED',
+    };
+    setMerchantData((prev) => (prev ? { ...prev, timeSales: [nextTimeSale, ...prev.timeSales] } : prev));
+  };
+
+  const closeTimeSale = async (timeSaleId: number) => {
+    if (!session) return;
+    await ownerApi.closeTimeSale(session.accessToken, timeSaleId).catch(() => undefined);
+    setMerchantData((prev) => (prev ? {
+      ...prev,
+      timeSales: prev.timeSales.map((item) => item.timeSaleId === timeSaleId ? { ...item, status: 'ENDED' } : item),
+    } : prev));
+  };
+
+  const submitPromotion = async (body: PromotionRequest) => {
+    if (!session || !merchantData?.store?.storeId) return;
+    const created = await ownerApi.createPromotion(session.accessToken, merchantData.store.storeId, body).catch(() => undefined);
+    const nextPromotion: PromotionDetail = created ?? {
+      promotionId: Date.now(),
+      storeId: merchantData.store.storeId,
+      storeName: merchantData.store.name,
+      type: body.type,
+      title: body.title,
+      content: body.content,
+      imageUrl: body.imageUrl,
+      startAt: body.startAt,
+      endAt: body.endAt,
+      status: 'SCHEDULED',
+    };
+    setMerchantData((prev) => (prev ? { ...prev, promotions: [nextPromotion, ...prev.promotions] } : prev));
+  };
+
+  const openTimeSalePage = () => {
     setActiveMenu('timesale');
   };
 
@@ -127,17 +186,16 @@ export function App() {
         <header className="topbar">
           <div><p className="eyebrow">OSHU Business</p><h1>{pageTitle}</h1></div>
           <div className="topbar-actions">
-            <button className="ghost-button"><Bell size={18} />알림</button>
-            <button className="primary-button" onClick={addTimeSale}><Plus size={18} />타임세일 등록</button>
+            <button className="primary-button" onClick={openTimeSalePage}><Plus size={18} />타임세일 등록</button>
             <button className="ghost-button" onClick={handleLogout}><LogOut size={18} />로그아웃</button>
           </div>
         </header>
 
         <section className="workspace">
           {activeMenu === 'dashboard' && <DashboardPage merchantData={merchantData} setActiveMenu={setActiveMenu} />}
-          {activeMenu === 'store' && <StorePage store={merchantData.store} updateStore={updateStore} />}
-          {activeMenu === 'timesale' && <TimeSalePage timeSales={merchantData.timeSales} setTimeSales={(timeSales) => setMerchantData((prev) => (prev ? { ...prev, timeSales } : prev))} />}
-          {activeMenu === 'promotion' && <PromotionPage promotions={merchantData.promotions} />}
+          {activeMenu === 'store' && <StorePage store={merchantData.store} onSubmit={submitStore} />}
+          {activeMenu === 'timesale' && <TimeSalePage timeSales={merchantData.timeSales} onSubmit={submitTimeSale} onClose={closeTimeSale} />}
+          {activeMenu === 'promotion' && <PromotionPage promotions={merchantData.promotions} onSubmit={submitPromotion} />}
         </section>
       </main>
     </div>

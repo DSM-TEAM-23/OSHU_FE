@@ -943,3 +943,10 @@ button:disabled {
 .signup-modal {
   width: min(1120px, calc(100vw - 48px));
 }
+
+.form-success {
+  margin: 14px 0 0;
+  color: var(--success);
+  font-size: 12px;
+  font-weight: 700;
+}

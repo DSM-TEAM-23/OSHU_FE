@@ -1,42 +1,64 @@
-import { ImagePlus, Save } from 'lucide-react';
-import type { StoreCategory, StoreDetail } from '../../../entities/owner/types';
+import { useState } from 'react';
+import { Save } from 'lucide-react';
+import type { CreateStoreRequest, StoreCategory, StoreDetail } from '../../../entities/owner/types';
 import { categoryOptions } from '../../../entities/owner/model/options';
 import { storeStatusLabel } from '../../../shared/lib/format';
-import { ValidationCard } from '../../../shared/ui/cards';
 
-export function StorePage({ store, updateStore }: { store: StoreDetail | null; updateStore: (patch: Partial<StoreDetail>) => void }) {
+export function StorePage({
+  store,
+  onSubmit,
+}: {
+  store: StoreDetail | null;
+  onSubmit: (body: CreateStoreRequest) => Promise<void>;
+}) {
+  const [form, setForm] = useState<CreateStoreRequest>({
+    name: store?.name ?? '',
+    businessNumber: store?.businessNumber ?? '',
+    category: store?.category ?? 'BAKERY',
+    address: store?.address ?? '',
+    latitude: 36.3628,
+    longitude: 127.3441,
+    description: store?.description ?? '',
+    phone: store?.phone ?? '',
+    openingHours: store?.openingHours ?? '',
+  });
+  const [message, setMessage] = useState('');
+
+  const updateForm = (patch: Partial<CreateStoreRequest>) => {
+    setForm((prev) => ({ ...prev, ...patch }));
+  };
+
+  const submit = async () => {
+    await onSubmit(form);
+    setMessage('저장되었습니다.');
+  };
+
   return (
     <div className="panel-stack">
       <section className="card">
         <div className="section-heading">
-          <div><p className="eyebrow">Owner Store API</p><h3>가게 등록 정보</h3></div>
-          <button className="primary-button"><Save size={18} />저장</button>
+          <div><p className="eyebrow">Store</p><h3>{store ? '가게 정보' : '가게 등록'}</h3></div>
+          <button className="primary-button" onClick={submit}><Save size={18} />저장</button>
         </div>
 
         <div className="form-grid">
-          <label>사업자등록번호 *<input value={store?.businessNumber ?? ''} readOnly /></label>
-          <label>상호명 *<input value={store?.name ?? ''} onChange={(event) => updateStore({ name: event.target.value })} /></label>
+          <label>상호명 *<input value={form.name} onChange={(event) => updateForm({ name: event.target.value })} /></label>
+          <label>사업자등록번호 *<input value={form.businessNumber} onChange={(event) => updateForm({ businessNumber: event.target.value })} /></label>
           <label>
             업종 *
-            <select value={store?.category ?? 'BAKERY'} onChange={(event) => updateStore({ category: event.target.value as StoreCategory })}>
+            <select value={form.category} onChange={(event) => updateForm({ category: event.target.value as StoreCategory })}>
               {categoryOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
             </select>
           </label>
-          <label>연락처<input value={store?.phone ?? ''} onChange={(event) => updateStore({ phone: event.target.value })} /></label>
-          <label className="wide">주소 *<input value={store?.address ?? ''} readOnly /></label>
-          <label>영업시간<input value={store?.openingHours ?? ''} onChange={(event) => updateStore({ openingHours: event.target.value })} /></label>
-          <label>상태<input value={storeStatusLabel(store?.status)} readOnly /></label>
-          <label className="wide">가게 소개<textarea value={store?.description ?? ''} onChange={(event) => updateStore({ description: event.target.value })} /></label>
+          <label>연락처<input value={form.phone ?? ''} onChange={(event) => updateForm({ phone: event.target.value })} /></label>
+          <label className="wide">주소 *<input value={form.address} onChange={(event) => updateForm({ address: event.target.value })} /></label>
+          <label>위도 *<input type="number" value={form.latitude} onChange={(event) => updateForm({ latitude: Number(event.target.value) })} /></label>
+          <label>경도 *<input type="number" value={form.longitude} onChange={(event) => updateForm({ longitude: Number(event.target.value) })} /></label>
+          <label>영업시간<input value={form.openingHours ?? ''} onChange={(event) => updateForm({ openingHours: event.target.value })} /></label>
+          <label>승인 상태<input value={storeStatusLabel(store?.status)} readOnly /></label>
+          <label className="wide">가게 소개<textarea value={form.description ?? ''} onChange={(event) => updateForm({ description: event.target.value })} /></label>
         </div>
-      </section>
-
-      <section className="split-grid">
-        <div className="card">
-          <p className="eyebrow">UpdateStoreRequest</p>
-          <h3>이미지 정보</h3>
-          <div className="upload-row"><button className="upload-box"><ImagePlus size={28} />imageUrls 추가</button></div>
-        </div>
-        <ValidationCard title="사용 API" items={['GET /owner/stores', 'POST /owner/stores', 'GET /owner/stores/{storeId}', 'PATCH /owner/stores/{storeId}']} />
+        {message && <p className="form-success">{message}</p>}
       </section>
     </div>
   );

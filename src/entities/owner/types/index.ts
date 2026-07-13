@@ -74,7 +74,7 @@ export type PromotionDetail = {
   promotionId: number;
   storeId: number;
   storeName: string;
-  type: 'TIME_SALE' | 'DISCOUNT' | 'EVENT' | 'NOTICE';
+  type: 'TIME_SALE' | 'DISCOUNT' | 'EVENT' | 'NEW_MENU' | 'NOTICE';
   title: string;
   imageUrl?: string;
   remainingMinutes?: number;

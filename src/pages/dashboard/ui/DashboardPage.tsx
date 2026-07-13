@@ -32,9 +32,9 @@ export function DashboardPage({ merchantData, setActiveMenu }: { merchantData: M
       <section className="card">
         <div className="section-heading"><div><p className="eyebrow">빠른 작업</p><h3>주요 작업</h3></div></div>
         <div className="quick-actions">
-          <QuickAction icon={Store} title="가게 정보 수정" detail="CreateStoreRequest / UpdateStoreRequest" onClick={() => setActiveMenu('store')} />
-          <QuickAction icon={Tag} title="타임세일 등록" detail="TimeSaleRequest" onClick={() => setActiveMenu('timesale')} />
-          <QuickAction icon={Megaphone} title="홍보 게시물 등록" detail="PromotionRequest" onClick={() => setActiveMenu('promotion')} />
+          <QuickAction icon={Store} title="가게 정보 수정" detail="가게 기본 정보" onClick={() => setActiveMenu('store')} />
+          <QuickAction icon={Tag} title="타임세일 등록" detail="TimeSale" onClick={() => setActiveMenu('timesale')} />
+          <QuickAction icon={Megaphone} title="홍보 게시물 등록" detail="Promotion" onClick={() => setActiveMenu('promotion')} />
         </div>
       </section>
 
