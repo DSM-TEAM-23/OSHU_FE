@@ -259,7 +259,6 @@ export function App() {
       <aside className="sidebar">
         <div className="brand">
           <img className="brand-mark" src="/ohshu.svg" alt="OSHU 로고" />
-          <div><strong>OSHU</strong><span>점주센터</span></div>
         </div>
 
         <nav className="nav-list" aria-label="점주센터 메뉴">
