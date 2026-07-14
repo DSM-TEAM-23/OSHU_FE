@@ -2,8 +2,19 @@ import { useState } from 'react';
 import { Plus, Save } from 'lucide-react';
 import type { PromotionDetail, PromotionRequest } from '../../../entities/owner/types';
 import { promotionTypeOptions } from '../../../entities/owner/model/options';
-import { toDatetimeLocalValue } from '../../../shared/lib/format';
+import { toDateValue, toDatetimeLocalValue } from '../../../shared/lib/format';
 import { PromotionTable } from '../../../shared/ui/tables';
+
+const normalizePromotionSchedule = (type: PromotionRequest['type'], startAt: string, endAt: string): Pick<PromotionRequest, 'startAt' | 'endAt'> => {
+  if (type !== 'NEW_MENU') {
+    return { startAt, endAt };
+  }
+
+  return {
+    startAt: `${startAt}T00:00`,
+    endAt: `${endAt}T23:59`,
+  };
+};
 
 export function PromotionPage({
   promotions,
@@ -44,13 +55,14 @@ export function PromotionPage({
   };
 
   const openEditModal = (item: PromotionDetail) => {
+    const isNewMenu = item.type === 'NEW_MENU';
     setForm({
       type: item.type,
       title: item.title,
       content: item.content ?? '',
       imageUrl: item.imageUrl ?? '',
-      startAt: toDatetimeLocalValue(item.startAt),
-      endAt: toDatetimeLocalValue(item.endAt),
+      startAt: isNewMenu ? toDateValue(item.startAt) : toDatetimeLocalValue(item.startAt),
+      endAt: isNewMenu ? toDateValue(item.endAt) : toDatetimeLocalValue(item.endAt),
     });
     setMessage('');
     setEditingId(item.promotionId);
@@ -63,7 +75,9 @@ export function PromotionPage({
       return;
     }
 
-    const warning = editingId ? await onUpdate(editingId, form) : await onSubmit(form);
+    const normalizedSchedule = normalizePromotionSchedule(form.type, form.startAt, form.endAt);
+    const requestBody = { ...form, ...normalizedSchedule };
+    const warning = editingId ? await onUpdate(editingId, requestBody) : await onSubmit(requestBody);
     if (warning) {
       setMessage('');
       onNotify(warning, 'error');
@@ -101,15 +115,31 @@ export function PromotionPage({
             <div className="form-grid modal-body">
               <label>
                 유형 *
-                <select value={form.type} onChange={(event) => updateForm({ type: event.target.value as PromotionRequest['type'] })}>
+                <select
+                  value={form.type}
+                  onChange={(event) => {
+                    const nextType = event.target.value as PromotionRequest['type'];
+                    updateForm({
+                      type: nextType,
+                      startAt: nextType === 'NEW_MENU' ? toDateValue(form.startAt) : form.startAt,
+                      endAt: nextType === 'NEW_MENU' ? toDateValue(form.endAt) : form.endAt,
+                    });
+                  }}
+                >
                   {promotionTypeOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
                 </select>
               </label>
               <label>이미지 URL<input value={form.imageUrl ?? ''} onChange={(event) => updateForm({ imageUrl: event.target.value })} /></label>
               <label className="wide">제목 *<input value={form.title} onChange={(event) => updateForm({ title: event.target.value })} /></label>
               <label className="wide">내용 *<textarea value={form.content} onChange={(event) => updateForm({ content: event.target.value })} /></label>
-              <label>시작 일시 *<input type="datetime-local" value={form.startAt} onChange={(event) => updateForm({ startAt: event.target.value })} /></label>
-              <label>종료 일시 *<input type="datetime-local" value={form.endAt} onChange={(event) => updateForm({ endAt: event.target.value })} /></label>
+              <label>
+                {form.type === 'NEW_MENU' ? '출시 시작일 *' : '시작 일시 *'}
+                <input type={form.type === 'NEW_MENU' ? 'date' : 'datetime-local'} value={form.startAt} onChange={(event) => updateForm({ startAt: event.target.value })} />
+              </label>
+              <label>
+                {form.type === 'NEW_MENU' ? '출시 종료일 *' : '종료 일시 *'}
+                <input type={form.type === 'NEW_MENU' ? 'date' : 'datetime-local'} value={form.endAt} onChange={(event) => updateForm({ endAt: event.target.value })} />
+              </label>
             </div>
 
             <footer className="modal-actions">

@@ -7,6 +7,11 @@ export const toDatetimeLocalValue = (value?: string) => {
   return value.replace(' ', 'T').slice(0, 16);
 };
 
+export const toDateValue = (value?: string) => {
+  if (!value) return '';
+  return value.slice(0, 10);
+};
+
 export const formatPeriod = (startAt?: string, endAt?: string) =>
   `${toDatetimeLocalValue(startAt)?.slice(5).replace('T', ' ') || '-'} - ${toDatetimeLocalValue(endAt)?.slice(11) || '-'}`;
 
