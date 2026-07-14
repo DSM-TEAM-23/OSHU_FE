@@ -61,9 +61,14 @@ export function StorePage({
       { ...requestBody, openingHours },
       { level: crowdLevel, estimatedWaitingMinutes },
     );
-    const message = warning ? '화면에는 저장되었습니다.' : '저장되었습니다.';
+    if (warning) {
+      setMessage('');
+      onNotify(warning, 'error');
+      return;
+    }
+    const message = '저장되었습니다.';
     setMessage(message);
-    onNotify(warning ?? message, warning ? 'error' : 'success');
+    onNotify(message, 'success');
     setIsModalOpen(false);
   };
 

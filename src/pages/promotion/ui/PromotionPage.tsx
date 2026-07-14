@@ -56,11 +56,14 @@ export function PromotionPage({
 
   const submit = async () => {
     const warning = editingId ? await onUpdate(editingId, form) : await onSubmit(form);
-    const message = warning
-      ? `화면에는 ${editingId ? '수정' : '등록'}되었습니다.`
-      : `${editingId ? '수정' : '등록'}되었습니다.`;
+    if (warning) {
+      setMessage('');
+      onNotify(warning, 'error');
+      return;
+    }
+    const message = `${editingId ? '수정' : '등록'}되었습니다.`;
     setMessage(message);
-    onNotify(warning ?? `홍보 게시물을 ${editingId ? '수정' : '등록'}했습니다.`, warning ? 'error' : 'success');
+    onNotify(`홍보 게시물을 ${editingId ? '수정' : '등록'}했습니다.`, 'success');
     setIsModalOpen(false);
     resetForm();
   };

@@ -22,14 +22,16 @@ const menuItems = [
 const getRequestFailureMessage = (error: unknown) => {
   const rawMessage = error instanceof Error ? error.message : '알 수 없는 오류';
   if (rawMessage.includes('Failed to fetch')) {
-    return '서버 요청이 브라우저에서 차단되었습니다. API 서버 CORS 또는 네트워크 설정을 확인해야 합니다.';
+    return '서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.';
   }
   if (rawMessage.includes('401') || rawMessage.includes('403')) {
-    return '서버가 요청을 거절했습니다. 실제 로그인 토큰으로 다시 확인해야 합니다.';
+    return '권한이 없거나 로그인 세션이 만료되었습니다. 다시 로그인해주세요.';
   }
   if (rawMessage.includes('404')) {
     return '서버에서 요청한 데이터를 찾지 못했습니다.';
   }
+  const serverMessage = rawMessage.match(/"message"\s*:\s*"([^"]+)"/)?.[1];
+  if (serverMessage) return serverMessage;
   return rawMessage;
 };
 
@@ -92,7 +94,7 @@ export function App() {
     } catch (error) {
       setMerchantData(createEmptyMerchantData());
       setActiveMenu('store');
-      return { ok: true, message: '로그인은 완료됐지만 가게 정보를 불러오지 못했습니다.' };
+      return { ok: true, message: '로그인은 완료됐지만 가게 정보를 불러오지 못했습니다.', notifyType: 'error' as const };
     }
   };
 
@@ -151,8 +153,9 @@ export function App() {
       } catch (error) {
         warning = getRequestFailureMessage(error);
       }
+      if (warning) return warning;
       updateStore({ ...(updatedStore ?? body), crowdStatus: updatedCrowdStatus ?? { level: crowdStatus.level, estimatedWaitingMinutes: crowdStatus.estimatedWaitingMinutes } });
-      return warning;
+      return undefined;
     }
 
     let warning: string | undefined;
@@ -166,31 +169,22 @@ export function App() {
     } catch (error) {
       warning = getRequestFailureMessage(error);
     }
-    const nextStore: StoreDetail = createdStore ?? {
-      storeId: Date.now(),
-      status: 'PENDING_APPROVAL',
-      crowdStatus: { level: crowdStatus.level, estimatedWaitingMinutes: crowdStatus.estimatedWaitingMinutes },
-      ...body,
-    };
-    setMerchantData((prev) => (prev ? { ...prev, store: nextStore } : prev));
-    return warning;
+    if (warning || !createdStore) return warning ?? '가게 등록에 실패했습니다.';
+    setMerchantData((prev) => (prev ? { ...prev, store: createdStore } : prev));
+    return undefined;
   };
 
   const submitTimeSale = async (body: TimeSaleRequest) => {
     if (!session || !merchantData?.store?.storeId) return;
     let warning: string | undefined;
-    const created = await ownerApi.createTimeSale(session.accessToken, merchantData.store.storeId, body).catch((error) => {
-      warning = getRequestFailureMessage(error);
-      return undefined;
-    });
-    const nextTimeSale: TimeSale = created ?? {
-      ...body,
-      timeSaleId: Date.now(),
-      storeId: merchantData.store.storeId,
-      status: 'SCHEDULED',
-    };
-    setMerchantData((prev) => (prev ? { ...prev, timeSales: [nextTimeSale, ...prev.timeSales] } : prev));
-    return warning;
+    const created = await ownerApi.createTimeSale(session.accessToken, merchantData.store.storeId, body)
+      .catch((error) => {
+        warning = getRequestFailureMessage(error);
+        return undefined;
+      });
+    if (warning || !created) return warning ?? '타임세일 등록에 실패했습니다.';
+    setMerchantData((prev) => (prev ? { ...prev, timeSales: [created, ...prev.timeSales] } : prev));
+    return undefined;
   };
 
   const closeTimeSale = async (timeSaleId: number) => {
@@ -204,10 +198,6 @@ export function App() {
       } : prev));
     } catch (error) {
       warning = getRequestFailureMessage(error);
-      setMerchantData((prev) => (prev ? {
-        ...prev,
-        timeSales: prev.timeSales.map((item) => item.timeSaleId === timeSaleId ? { ...item, status: 'ENDED' } : item),
-      } : prev));
     }
     if (warning) showToast(warning, 'error');
     else showToast('타임세일을 종료했습니다.', 'success');
@@ -222,34 +212,25 @@ export function App() {
     } catch (error) {
       warning = getRequestFailureMessage(error);
     }
+    if (warning) return warning;
     setMerchantData((prev) => (prev ? {
       ...prev,
-      timeSales: prev.timeSales.map((item) => item.timeSaleId === timeSaleId ? (updatedTimeSale ?? { ...item, ...body }) : item),
+      timeSales: prev.timeSales.map((item) => item.timeSaleId === timeSaleId ? (updatedTimeSale ?? item) : item),
     } : prev));
-    return warning;
+    return undefined;
   };
 
   const submitPromotion = async (body: PromotionRequest) => {
     if (!session || !merchantData?.store?.storeId) return;
     let warning: string | undefined;
-    const created = await ownerApi.createPromotion(session.accessToken, merchantData.store.storeId, body).catch((error) => {
-      warning = getRequestFailureMessage(error);
-      return undefined;
-    });
-    const nextPromotion: PromotionDetail = created ?? {
-      promotionId: Date.now(),
-      storeId: merchantData.store.storeId,
-      storeName: merchantData.store.name,
-      type: body.type,
-      title: body.title,
-      content: body.content,
-      imageUrl: body.imageUrl,
-      startAt: body.startAt,
-      endAt: body.endAt,
-      status: 'SCHEDULED',
-    };
-    setMerchantData((prev) => (prev ? { ...prev, promotions: [nextPromotion, ...prev.promotions] } : prev));
-    return warning;
+    const created = await ownerApi.createPromotion(session.accessToken, merchantData.store.storeId, body)
+      .catch((error) => {
+        warning = getRequestFailureMessage(error);
+        return undefined;
+      });
+    if (warning || !created) return warning ?? '홍보 게시물 등록에 실패했습니다.';
+    setMerchantData((prev) => (prev ? { ...prev, promotions: [created, ...prev.promotions] } : prev));
+    return undefined;
   };
 
   const updatePromotion = async (promotionId: number, body: PromotionRequest) => {
@@ -261,14 +242,15 @@ export function App() {
     } catch (error) {
       warning = getRequestFailureMessage(error);
     }
+    if (warning) return warning;
 
     setMerchantData((prev) => (prev ? {
       ...prev,
       promotions: prev.promotions.map((item) => item.promotionId === promotionId
-        ? (updatedPromotion ?? { ...item, ...body })
+        ? (updatedPromotion ?? item)
         : item),
     } : prev));
-    return warning;
+    return undefined;
   };
 
   const openTimeSalePage = () => {

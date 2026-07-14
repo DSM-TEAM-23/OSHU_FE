@@ -13,7 +13,7 @@ export function AuthScreen({
 }: {
   mode: AuthMode;
   setMode: (mode: AuthMode) => void;
-  onLogin: (loginId: string, password: string) => Promise<{ ok: boolean; message?: string }>;
+  onLogin: (loginId: string, password: string) => Promise<{ ok: boolean; message?: string; notifyType?: 'success' | 'error' }>;
   onSignup: (draft: SignupDraft) => Promise<{ ok: boolean; message?: string }>;
   onNotify: (message: string, type?: 'success' | 'error') => void;
 }) {
@@ -43,7 +43,7 @@ export function AuthScreen({
     const result = await onLogin(loginId, loginPassword);
     const message = result.message ?? '아이디 또는 비밀번호가 올바르지 않습니다.';
     setLoginError(result.ok ? '' : message);
-    onNotify(result.ok ? result.message ?? '로그인되었습니다.' : message, result.ok ? 'success' : 'error');
+    onNotify(result.ok ? result.message ?? '로그인되었습니다.' : message, result.ok ? result.notifyType ?? 'success' : 'error');
     setIsSubmitting(false);
   };
 
