@@ -58,6 +58,27 @@ const getRequestFailureMessage = (error: unknown) => {
   return rawMessage;
 };
 
+const getAiRecommendationFailureMessage = (error: unknown) => {
+  if (error instanceof ApiError) {
+    if (error.status === 401) {
+      return '로그인 세션이 만료되었습니다. 다시 로그인해주세요.';
+    }
+    if (error.status === 403) {
+      return 'AI 추천 요청이 서버에서 거부되었습니다. 잠시 후 다시 시도해주세요.';
+    }
+    if (error.status === 404) {
+      return 'AI 추천 서버 경로를 찾지 못했습니다. 서버 설정을 확인해주세요.';
+    }
+    return error.message || 'AI 추천을 불러오지 못했습니다.';
+  }
+
+  const rawMessage = error instanceof Error ? error.message : 'AI 추천을 불러오지 못했습니다.';
+  if (rawMessage.includes('Failed to fetch')) {
+    return 'AI 추천 서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.';
+  }
+  return rawMessage;
+};
+
 const readStoredSession = (): Session | null => {
   if (typeof window === 'undefined') return null;
   const raw = window.localStorage.getItem(SESSION_STORAGE_KEY);
@@ -225,7 +246,7 @@ export function App() {
     setMerchantData((prev) => (prev ? { ...prev, store: prev.store ? { ...prev.store, ...patch } : null } : prev));
   };
 
-  const submitStore = async (body: CreateStoreRequest, crowdStatus: CrowdStatusRequest) => {
+  const submitStore = async (body: CreateStoreRequest, crowdStatus?: CrowdStatusRequest) => {
     if (!session) return;
 
     if (merchantData?.store?.storeId) {
@@ -242,12 +263,17 @@ export function App() {
           phone: body.phone,
           openingHours: body.openingHours,
         });
-        updatedCrowdStatus = await ownerApi.updateCrowdStatus(session.accessToken, merchantData.store.storeId, crowdStatus);
+        if (crowdStatus) {
+          updatedCrowdStatus = await ownerApi.updateCrowdStatus(session.accessToken, merchantData.store.storeId, crowdStatus);
+        }
       } catch (error) {
         warning = getRequestFailureMessage(error);
       }
       if (warning) return warning;
-      updateStore({ ...(updatedStore ?? body), crowdStatus: updatedCrowdStatus ?? { level: crowdStatus.level, estimatedWaitingMinutes: crowdStatus.estimatedWaitingMinutes } });
+      updateStore({
+        ...(updatedStore ?? body),
+        crowdStatus: updatedCrowdStatus ?? merchantData.store.crowdStatus,
+      });
       return undefined;
     }
 
@@ -255,7 +281,7 @@ export function App() {
     let createdStore: StoreDetail | undefined;
     try {
       createdStore = await ownerApi.createStore(session.accessToken, body);
-      if (createdStore.storeId) {
+      if (createdStore.storeId && crowdStatus) {
         const updatedCrowdStatus = await ownerApi.updateCrowdStatus(session.accessToken, createdStore.storeId, crowdStatus);
         createdStore = { ...createdStore, crowdStatus: updatedCrowdStatus };
       }
@@ -344,7 +370,7 @@ export function App() {
     try {
       return await ownerApi.getDiscountRecommendation(session.accessToken, merchantData.store.storeId);
     } catch (error) {
-      throw new Error(getRequestFailureMessage(error));
+      throw new Error(getAiRecommendationFailureMessage(error));
     }
   };
 
