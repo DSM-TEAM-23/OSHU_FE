@@ -1,6 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
 import { LogOut, MessageSquareText, Plus, Store } from 'lucide-react';
-import type { CreateStoreRequest, CrowdStatusRequest, Inquiry, PromotionDetail, PromotionRequest, StoreDetail, TimeSale, TimeSaleRequest } from '../entities/owner/types';
+import type {
+  CreateStoreRequest,
+  CrowdStatusRequest,
+  DailyOrderStatisticsRequest,
+  Inquiry,
+  PromotionDetail,
+  PromotionRequest,
+  StoreDetail,
+  TimeSale,
+  TimeSaleRequest,
+} from '../entities/owner/types';
 import type { AuthMode, MenuKey, MerchantData, Session, SignupDraft } from '../entities/owner/types/ui';
 import { createEmptyMerchantData } from '../entities/owner/model/mockData';
 import { ApiError, ownerApi } from '../entities/owner/api';
@@ -317,6 +327,27 @@ export function App() {
     return undefined;
   };
 
+  const saveDailyOrderStatistics = async (body: DailyOrderStatisticsRequest) => {
+    if (!session || !merchantData?.store?.storeId) return '가게 정보가 필요합니다.';
+    try {
+      await ownerApi.saveDailyOrderStatistics(session.accessToken, merchantData.store.storeId, body);
+      return undefined;
+    } catch (error) {
+      return getRequestFailureMessage(error);
+    }
+  };
+
+  const getDiscountRecommendation = async () => {
+    if (!session || !merchantData?.store?.storeId) {
+      throw new Error('가게 정보가 필요합니다.');
+    }
+    try {
+      return await ownerApi.getDiscountRecommendation(session.accessToken, merchantData.store.storeId);
+    } catch (error) {
+      throw new Error(getRequestFailureMessage(error));
+    }
+  };
+
   const submitPromotion = async (body: PromotionRequest) => {
     if (!session || !merchantData?.store?.storeId) return;
     let warning: string | undefined;
@@ -426,10 +457,13 @@ export function App() {
           {activeMenu === 'store' && <StorePage store={merchantData.store} onSubmit={submitStore} onNotify={showToast} />}
           {activeMenu === 'timesale' && (
             <TimeSalePage
+              storeId={merchantData.store?.storeId}
               timeSales={merchantData.timeSales}
               onSubmit={submitTimeSale}
               onUpdate={updateTimeSale}
               onClose={closeTimeSale}
+              onSaveOrderStatistics={saveDailyOrderStatistics}
+              onRecommendDiscount={getDiscountRecommendation}
               editingTimeSaleId={editingTimeSaleId}
               onEditConsumed={() => setEditingTimeSaleId(null)}
               onNotify={showToast}

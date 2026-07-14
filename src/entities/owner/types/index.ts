@@ -133,6 +133,27 @@ export type TimeSaleRequest = {
   notice?: string;
 };
 
+export type HourlyOrderCountRequest = {
+  hour: number;
+  orderCount: number;
+};
+
+export type DailyOrderStatisticsRequest = {
+  orderDate: string;
+  hourlyOrderCounts: HourlyOrderCountRequest[];
+};
+
+export type DiscountRecommendationResponse = {
+  recommendedDay: string;
+  startHour: number;
+  endHour: number;
+  discountRate: number;
+  reason: string;
+  analysisStartDate: string;
+  analysisEndDate: string;
+  analyzedDays: number;
+};
+
 export type TimeSale = TimeSaleRequest & {
   timeSaleId: number;
   storeId?: number;

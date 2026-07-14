@@ -12,6 +12,8 @@ export const toDateValue = (value?: string) => {
   return value.slice(0, 10);
 };
 
+export const todayDateValue = () => new Date().toISOString().slice(0, 10);
+
 export const formatPeriod = (startAt?: string, endAt?: string) =>
   `${toDatetimeLocalValue(startAt)?.slice(5).replace('T', ' ') || '-'} - ${toDatetimeLocalValue(endAt)?.slice(11) || '-'}`;
 
@@ -36,3 +38,6 @@ export function statusLabel(status: TimeSale['status'] | PromotionDetail['status
   if (status === 'SOLD_OUT') return '품절';
   return '종료됨';
 }
+
+export const formatHourRange = (startHour: number, endHour: number) =>
+  `${String(startHour).padStart(2, '0')}:00 - ${String(endHour).padStart(2, '0')}:00`;

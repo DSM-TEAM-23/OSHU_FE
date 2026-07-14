@@ -1,22 +1,36 @@
 import { useEffect, useState } from 'react';
-import { Plus, Save } from 'lucide-react';
-import type { TimeSale, TimeSaleRequest } from '../../../entities/owner/types';
-import { toDatetimeLocalValue } from '../../../shared/lib/format';
+import { Bot, Plus, Save, Sparkles } from 'lucide-react';
+import type {
+  DailyOrderStatisticsRequest,
+  DiscountRecommendationResponse,
+  HourlyOrderCountRequest,
+  TimeSale,
+  TimeSaleRequest,
+} from '../../../entities/owner/types';
+import { formatHourRange, toDatetimeLocalValue, todayDateValue } from '../../../shared/lib/format';
 import { TimeSaleTable } from '../../../shared/ui/tables';
 
+const hourlyInputDefaults = () => Array.from({ length: 24 }, (_, hour) => ({ hour, orderCount: 0 }));
+
 export function TimeSalePage({
+  storeId,
   timeSales,
   onSubmit,
   onUpdate,
   onClose,
+  onSaveOrderStatistics,
+  onRecommendDiscount,
   editingTimeSaleId,
   onEditConsumed,
   onNotify,
 }: {
+  storeId?: number;
   timeSales: TimeSale[];
   onSubmit: (body: TimeSaleRequest) => Promise<string | undefined>;
   onUpdate: (timeSaleId: number, body: TimeSaleRequest) => Promise<string | undefined>;
   onClose: (timeSaleId: number) => Promise<void>;
+  onSaveOrderStatistics: (body: DailyOrderStatisticsRequest) => Promise<string | undefined>;
+  onRecommendDiscount: () => Promise<DiscountRecommendationResponse>;
   editingTimeSaleId?: number | null;
   onEditConsumed?: () => void;
   onNotify: (message: string, type?: 'success' | 'error') => void;
@@ -33,6 +47,14 @@ export function TimeSalePage({
   const [error, setError] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+
+  const [statisticsDate, setStatisticsDate] = useState(todayDateValue());
+  const [hourlyOrderCounts, setHourlyOrderCounts] = useState<HourlyOrderCountRequest[]>(hourlyInputDefaults());
+  const [statisticsMessage, setStatisticsMessage] = useState('');
+  const [statisticsError, setStatisticsError] = useState('');
+  const [isSavingStatistics, setIsSavingStatistics] = useState(false);
+  const [isLoadingRecommendation, setIsLoadingRecommendation] = useState(false);
+  const [recommendation, setRecommendation] = useState<DiscountRecommendationResponse | null>(null);
 
   const resetForm = () => {
     setForm({ productName: '', originalPrice: 0, salePrice: 0, startAt: '', endAt: '', notice: '' });
@@ -100,6 +122,63 @@ export function TimeSalePage({
     resetForm();
   };
 
+  const updateHourlyOrderCount = (hour: number, orderCount: number) => {
+    setHourlyOrderCounts((prev) => prev.map((item) => (item.hour === hour
+      ? { ...item, orderCount: Number.isNaN(orderCount) ? 0 : Math.max(0, orderCount) }
+      : item)));
+  };
+
+  const saveStatistics = async () => {
+    if (!storeId) {
+      const warning = '가게 등록 후 사용할 수 있습니다.';
+      setStatisticsError(warning);
+      onNotify(warning, 'error');
+      return;
+    }
+
+    setIsSavingStatistics(true);
+    const warning = await onSaveOrderStatistics({
+      orderDate: statisticsDate,
+      hourlyOrderCounts,
+    });
+    setIsSavingStatistics(false);
+
+    if (warning) {
+      setStatisticsMessage('');
+      setStatisticsError(warning);
+      onNotify(warning, 'error');
+      return;
+    }
+
+    setStatisticsError('');
+    setStatisticsMessage('주문 데이터가 저장되었습니다. 이제 AI 추천을 받아보세요.');
+    onNotify('하루 주문 데이터를 저장했습니다.', 'success');
+  };
+
+  const requestRecommendation = async () => {
+    if (!storeId) {
+      const warning = '가게 등록 후 사용할 수 있습니다.';
+      setStatisticsError(warning);
+      onNotify(warning, 'error');
+      return;
+    }
+
+    setIsLoadingRecommendation(true);
+    try {
+      const nextRecommendation = await onRecommendDiscount();
+      setRecommendation(nextRecommendation);
+      setStatisticsError('');
+      setStatisticsMessage('');
+      onNotify('AI 할인 추천을 불러왔습니다.', 'success');
+    } catch (error) {
+      const warning = error instanceof Error ? error.message : 'AI 추천을 불러오지 못했습니다.';
+      setStatisticsError(warning);
+      onNotify(warning, 'error');
+    } finally {
+      setIsLoadingRecommendation(false);
+    }
+  };
+
   useEffect(() => {
     if (!editingTimeSaleId) return;
     const target = timeSales.find((item) => item.timeSaleId === editingTimeSaleId);
@@ -117,6 +196,83 @@ export function TimeSalePage({
         <TimeSaleTable items={timeSales} onEdit={openEditModal} onClose={onClose} />
         {message && <p className="form-success">{message}</p>}
         {error && <p className="form-error">{error}</p>}
+      </section>
+
+      <section className="card ai-recommendation-card">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">AI 할인 추천</p>
+            <h3>주문이 비는 시간대를 자동으로 찾아드려요</h3>
+          </div>
+          <div className="ai-badge"><Bot size={16} />Claude 분석</div>
+        </div>
+
+        <div className="ai-grid">
+          <div className="ai-input-panel">
+            <div className="recommendation-date-row">
+              <label>
+                분석 날짜
+                <input type="date" value={statisticsDate} onChange={(event) => setStatisticsDate(event.target.value)} />
+              </label>
+              <div className="ai-summary-chip">
+                총 주문 {hourlyOrderCounts.reduce((sum, item) => sum + item.orderCount, 0)}건
+              </div>
+            </div>
+
+            <div className="hourly-grid">
+              {hourlyOrderCounts.map((item) => (
+                <label key={item.hour} className="hourly-cell">
+                  <span>{String(item.hour).padStart(2, '0')}:00</span>
+                  <input
+                    type="number"
+                    min={0}
+                    value={item.orderCount}
+                    onChange={(event) => updateHourlyOrderCount(item.hour, Number(event.target.value))}
+                  />
+                </label>
+              ))}
+            </div>
+
+            <div className="recommendation-actions">
+              <button className="ghost-button" onClick={saveStatistics} disabled={isSavingStatistics}>
+                <Save size={18} />
+                {isSavingStatistics ? '저장 중' : '주문 데이터 저장'}
+              </button>
+              <button className="primary-button" onClick={requestRecommendation} disabled={isLoadingRecommendation}>
+                <Sparkles size={18} />
+                {isLoadingRecommendation ? '분석 중' : 'AI 추천 받기'}
+              </button>
+            </div>
+
+            {statisticsMessage && <p className="form-success">{statisticsMessage}</p>}
+            {statisticsError && <p className="form-error">{statisticsError}</p>}
+          </div>
+
+          <div className="ai-result-panel">
+            {recommendation ? (
+              <>
+                <div className="recommendation-hero">
+                  <p className="eyebrow">추천 결과</p>
+                  <h4>{recommendation.recommendedDay} {formatHourRange(recommendation.startHour, recommendation.endHour)}</h4>
+                  <strong>{recommendation.discountRate}% 할인</strong>
+                </div>
+                <div className="recommendation-meta">
+                  <span className="plain-badge">분석 기간 {recommendation.analysisStartDate} ~ {recommendation.analysisEndDate}</span>
+                  <span className="plain-badge">분석 일수 {recommendation.analyzedDays}일</span>
+                </div>
+                <div className="recommendation-reason">
+                  <p>{recommendation.reason}</p>
+                </div>
+              </>
+            ) : (
+              <div className="recommendation-empty">
+                <Sparkles size={28} />
+                <strong>주문 데이터를 저장한 뒤 추천을 받아보세요</strong>
+                <p>AI가 최근 주문 패턴을 보고 손님이 비교적 적은 요일과 시간대를 골라 할인 운영 시간을 제안합니다.</p>
+              </div>
+            )}
+          </div>
+        </div>
       </section>
 
       {isModalOpen && (

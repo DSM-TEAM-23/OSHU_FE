@@ -2,6 +2,8 @@ import type {
   CreateStoreRequest,
   CrowdStatusRequest,
   CrowdStatusResponse,
+  DailyOrderStatisticsRequest,
+  DiscountRecommendationResponse,
   Inquiry,
   LoginRequest,
   MessageResponse,
@@ -198,6 +200,20 @@ export const ownerApi = {
   closeTimeSale(accessToken: string, timeSaleId: number) {
     return request<TimeSale>(`/owner/time-sales/${timeSaleId}/close`, {
       method: 'PATCH',
+      headers: authHeaders(accessToken),
+    });
+  },
+
+  saveDailyOrderStatistics(accessToken: string, storeId: number, body: DailyOrderStatisticsRequest) {
+    return request<void>(`/owner/stores/${storeId}/order-statistics`, {
+      method: 'POST',
+      headers: authHeaders(accessToken),
+      body: JSON.stringify(body),
+    });
+  },
+
+  getDiscountRecommendation(accessToken: string, storeId: number) {
+    return request<DiscountRecommendationResponse>(`/owner/stores/${storeId}/discount-recommendations`, {
       headers: authHeaders(accessToken),
     });
   },
