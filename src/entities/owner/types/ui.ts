@@ -1,6 +1,6 @@
-import type { CreateStoreRequest, LoginRequest, PromotionDetail, StoreDetail, TimeSale } from './index';
+import type { CreateStoreRequest, Inquiry, LoginRequest, PromotionDetail, StoreDetail, TimeSale } from './index';
 
-export type MenuKey = 'dashboard' | 'store' | 'timesale' | 'promotion';
+export type MenuKey = 'dashboard' | 'store' | 'timesale' | 'promotion' | 'inquiry';
 export type AuthMode = 'login' | 'signup';
 
 export type Session = {
@@ -20,4 +20,5 @@ export type MerchantData = {
   store: StoreDetail | null;
   timeSales: TimeSale[];
   promotions: PromotionDetail[];
+  inquiries: Inquiry[];
 };

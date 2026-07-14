@@ -28,6 +28,21 @@ export type ImageUploadResponse = {
   imageUrl: string;
 };
 
+export type InquiryRequest = {
+  title: string;
+  content: string;
+  name: string;
+  number: string;
+};
+
+export type Inquiry = {
+  id: number;
+  title: string;
+  content: string;
+  name: string;
+  number: string;
+};
+
 export type CreateStoreRequest = {
   name: string;
   category: StoreCategory;

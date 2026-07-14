@@ -2,6 +2,7 @@ import type {
   CreateStoreRequest,
   CrowdStatusRequest,
   CrowdStatusResponse,
+  Inquiry,
   LoginRequest,
   MessageResponse,
   ImageUploadResponse,
@@ -208,6 +209,18 @@ export const ownerApi = {
       method: 'POST',
       headers: authHeaders(accessToken),
       body,
+    });
+  },
+
+  getStoreInquiries(accessToken: string, storeId: number) {
+    return request<Inquiry[]>(`/inquiry/store/${storeId}`, {
+      headers: authHeaders(accessToken),
+    });
+  },
+
+  getInquiry(accessToken: string, inquiryId: number) {
+    return request<Inquiry>(`/inquiry/${inquiryId}`, {
+      headers: authHeaders(accessToken),
     });
   },
 };

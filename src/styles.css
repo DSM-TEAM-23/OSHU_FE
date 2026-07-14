@@ -1269,3 +1269,64 @@ button:disabled {
 .work-modal textarea {
   min-height: 132px;
 }
+
+.data-table tr.is-selected {
+  background: var(--primary-light);
+}
+
+.data-table tr.is-selected td {
+  border-color: #ffd7e1;
+}
+
+.inquiry-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.9fr);
+  gap: 16px;
+}
+
+.inquiry-detail-card {
+  min-height: 100%;
+}
+
+.inquiry-detail {
+  display: grid;
+  gap: 14px;
+}
+
+.inquiry-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.inquiry-content {
+  min-height: 240px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-muted);
+}
+
+.inquiry-content p {
+  margin: 0;
+  color: var(--text-strong);
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+.empty-detail,
+.empty-state-card {
+  display: grid;
+  gap: 12px;
+}
+
+.empty-detail {
+  min-height: 240px;
+  place-items: center;
+  padding: 24px;
+  color: var(--muted);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface-muted);
+  text-align: center;
+}

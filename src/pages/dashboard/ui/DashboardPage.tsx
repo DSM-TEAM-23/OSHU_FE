@@ -1,4 +1,4 @@
-import { Megaphone, Store, Tag } from 'lucide-react';
+import { Megaphone, MessageSquareText, Store, Tag } from 'lucide-react';
 import type { MerchantData, MenuKey } from '../../../entities/owner/types/ui';
 import { TimeSaleTable } from '../../../shared/ui/tables';
 import { congestionLabel } from '../../../shared/lib/format';
@@ -46,6 +46,10 @@ export function DashboardPage({
             <span>홍보</span>
             <strong>{merchantData.promotions.length}</strong>
           </div>
+          <div>
+            <span>문의</span>
+            <strong>{merchantData.inquiries.length}</strong>
+          </div>
         </div>
       </section>
 
@@ -57,6 +61,7 @@ export function DashboardPage({
           <button onClick={() => setActiveMenu('store')}><Store size={18} /><span>가게 정보</span></button>
           <button onClick={() => setActiveMenu('timesale')}><Tag size={18} /><span>타임세일</span></button>
           <button onClick={() => setActiveMenu('promotion')}><Megaphone size={18} /><span>홍보 등록</span></button>
+          <button onClick={() => setActiveMenu('inquiry')}><MessageSquareText size={18} /><span>문의 관리</span></button>
         </div>
       </section>
 

@@ -4,6 +4,7 @@ export const createEmptyMerchantData = (): MerchantData => ({
   store: null,
   timeSales: [],
   promotions: [],
+  inquiries: [],
 });
 
 export const createEmptySignupDraft = (): SignupDraft => ({

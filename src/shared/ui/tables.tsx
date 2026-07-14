@@ -1,4 +1,4 @@
-import type { PromotionDetail, TimeSale } from '../../entities/owner/types';
+import type { Inquiry, PromotionDetail, TimeSale } from '../../entities/owner/types';
 import { formatPeriod, formatPrice, promotionTypeLabel, statusLabel } from '../lib/format';
 
 export function TimeSaleTable({
@@ -55,6 +55,35 @@ export function PromotionTable({ items, onEdit }: { items: PromotionDetail[]; on
             </tr>
           ))}
           {items.length === 0 && <tr><td colSpan={5} className="empty-cell">등록된 홍보 게시물이 없습니다.</td></tr>}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+export function InquiryTable({
+  items,
+  selectedId,
+  onSelect,
+}: {
+  items: Inquiry[];
+  selectedId?: number | null;
+  onSelect?: (item: Inquiry) => void;
+}) {
+  return (
+    <div className="data-table-wrap">
+      <table className="data-table">
+        <thead><tr><th>제목</th><th>작성자</th><th>연락처</th><th /></tr></thead>
+        <tbody>
+          {items.map((item) => (
+            <tr key={item.id} className={selectedId === item.id ? 'is-selected' : ''}>
+              <td><strong>{item.title}</strong><p>{item.content}</p></td>
+              <td>{item.name}</td>
+              <td>{item.number}</td>
+              <td>{onSelect && <button className="table-button" onClick={() => onSelect(item)}>상세 보기</button>}</td>
+            </tr>
+          ))}
+          {items.length === 0 && <tr><td colSpan={4} className="empty-cell">아직 들어온 문의가 없습니다.</td></tr>}
         </tbody>
       </table>
     </div>

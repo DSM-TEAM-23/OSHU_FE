@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { LogOut, Plus, Store } from 'lucide-react';
-import type { CreateStoreRequest, CrowdStatusRequest, PromotionDetail, PromotionRequest, StoreDetail, TimeSale, TimeSaleRequest } from '../entities/owner/types';
+import { LogOut, MessageSquareText, Plus, Store } from 'lucide-react';
+import type { CreateStoreRequest, CrowdStatusRequest, Inquiry, PromotionDetail, PromotionRequest, StoreDetail, TimeSale, TimeSaleRequest } from '../entities/owner/types';
 import type { AuthMode, MenuKey, MerchantData, Session, SignupDraft } from '../entities/owner/types/ui';
 import { createEmptyMerchantData } from '../entities/owner/model/mockData';
 import { ApiError, ownerApi } from '../entities/owner/api';
@@ -9,6 +9,7 @@ import { DashboardPage } from '../pages/dashboard/ui/DashboardPage';
 import { StorePage } from '../pages/store/ui/StorePage';
 import { TimeSalePage } from '../pages/time-sale/ui/TimeSalePage';
 import { PromotionPage } from '../pages/promotion/ui/PromotionPage';
+import { InquiryPage } from '../pages/inquiry/ui/InquiryPage';
 import { LayoutDashboard, Megaphone, Tag } from 'lucide-react';
 import { Toast, type ToastState } from '../shared/ui/Toast';
 
@@ -19,6 +20,7 @@ const menuItems = [
   { key: 'store' as const, label: '가게 등록', icon: Store },
   { key: 'timesale' as const, label: '타임세일', icon: Tag },
   { key: 'promotion' as const, label: '가게 홍보 등록', icon: Megaphone },
+  { key: 'inquiry' as const, label: '문의 관리', icon: MessageSquareText },
 ];
 
 const getRequestFailureMessage = (error: unknown) => {
@@ -129,11 +131,15 @@ export function App() {
       return createEmptyMerchantData();
     }
 
-    const store = await ownerApi.getMyStore(accessToken, firstStore.storeId);
+    const [store, inquiries] = await Promise.all([
+      ownerApi.getMyStore(accessToken, firstStore.storeId),
+      ownerApi.getStoreInquiries(accessToken, firstStore.storeId).catch(() => [] as Inquiry[]),
+    ]);
     return {
       store,
       timeSales: store.timeSales ?? [],
       promotions: store.promotions ?? [],
+      inquiries,
     };
   };
 
@@ -183,7 +189,12 @@ export function App() {
 
       setSession({ accessToken: token.accessToken, tokenType: token.tokenType, loginId: draft.loginId.trim() });
       storeSession({ accessToken: token.accessToken, tokenType: token.tokenType, loginId: draft.loginId.trim() });
-      setMerchantData({ store: createdStore, timeSales: createdStore.timeSales ?? [], promotions: createdStore.promotions ?? [] });
+      setMerchantData({
+        store: createdStore,
+        timeSales: createdStore.timeSales ?? [],
+        promotions: createdStore.promotions ?? [],
+        inquiries: [],
+      });
       setActiveMenu('dashboard');
       return { ok: true, message: '회원가입과 가게 등록이 완료되었습니다.' };
     } catch (error) {
@@ -248,11 +259,13 @@ export function App() {
         store: createdStore,
         timeSales: createdStore.timeSales ?? prev.timeSales,
         promotions: createdStore.promotions ?? prev.promotions,
+        inquiries: prev.inquiries,
       }
       : {
         store: createdStore,
         timeSales: createdStore.timeSales ?? [],
         promotions: createdStore.promotions ?? [],
+        inquiries: [],
       }));
     setActiveMenu('dashboard');
     return undefined;
@@ -428,6 +441,27 @@ export function App() {
               onSubmit={submitPromotion}
               onUpdate={updatePromotion}
               onUploadImage={uploadPromotionImage}
+              onNotify={showToast}
+            />
+          )}
+          {activeMenu === 'inquiry' && (
+            <InquiryPage
+              store={merchantData.store}
+              inquiries={merchantData.inquiries}
+              onRefresh={async () => {
+                if (!session || !merchantData.store?.storeId) return '가게 정보가 필요합니다.';
+                try {
+                  const inquiries = await ownerApi.getStoreInquiries(session.accessToken, merchantData.store.storeId);
+                  setMerchantData((prev) => (prev ? { ...prev, inquiries } : prev));
+                  return undefined;
+                } catch (error) {
+                  return getRequestFailureMessage(error);
+                }
+              }}
+              onLoadDetail={async (inquiryId) => {
+                if (!session) throw new Error('로그인 세션이 필요합니다.');
+                return ownerApi.getInquiry(session.accessToken, inquiryId);
+              }}
               onNotify={showToast}
             />
           )}
