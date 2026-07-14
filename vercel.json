@@ -5,6 +5,10 @@
       "destination": "http://3.216.152.235:8080/:path*"
     },
     {
+      "source": "/uploads/:path*",
+      "destination": "http://3.216.152.235:8080/uploads/:path*"
+    },
+    {
       "source": "/:path*",
       "destination": "/index.html"
     }

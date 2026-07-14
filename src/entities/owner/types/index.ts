@@ -24,6 +24,10 @@ export type TokenResponse = {
   tokenType?: string;
 };
 
+export type ImageUploadResponse = {
+  imageUrl: string;
+};
+
 export type CreateStoreRequest = {
   name: string;
   category: StoreCategory;

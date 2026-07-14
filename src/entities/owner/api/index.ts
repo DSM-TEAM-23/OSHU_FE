@@ -4,6 +4,7 @@ import type {
   CrowdStatusResponse,
   LoginRequest,
   MessageResponse,
+  ImageUploadResponse,
   OwnerStore,
   PromotionDetail,
   PromotionRequest,
@@ -57,9 +58,10 @@ const normalizeTokenResponse = (token: RawTokenResponse): TokenResponse => {
 };
 
 async function request<TResponse>(path: string, options: RequestInit = {}): Promise<TResponse> {
+  const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
   const headers = {
     Accept: 'application/json',
-    ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+    ...(!isFormData && options.body ? { 'Content-Type': 'application/json' } : {}),
     ...options.headers,
   };
 
@@ -196,6 +198,16 @@ export const ownerApi = {
     return request<TimeSale>(`/owner/time-sales/${timeSaleId}/close`, {
       method: 'PATCH',
       headers: authHeaders(accessToken),
+    });
+  },
+
+  uploadImage(accessToken: string, image: File) {
+    const body = new FormData();
+    body.append('image', image);
+    return request<ImageUploadResponse>('/owner/uploads/images', {
+      method: 'POST',
+      headers: authHeaders(accessToken),
+      body,
     });
   },
 };

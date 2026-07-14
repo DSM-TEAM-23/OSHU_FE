@@ -317,6 +317,14 @@ export function App() {
     return undefined;
   };
 
+  const uploadPromotionImage = async (image: File) => {
+    if (!session) {
+      throw new Error('로그인 세션이 필요합니다.');
+    }
+    const response = await ownerApi.uploadImage(session.accessToken, image);
+    return response.imageUrl;
+  };
+
   const updatePromotion = async (promotionId: number, body: PromotionRequest) => {
     if (!session || !merchantData?.store?.storeId) return;
     let warning: string | undefined;
@@ -414,7 +422,15 @@ export function App() {
               onNotify={showToast}
             />
           )}
-          {activeMenu === 'promotion' && <PromotionPage promotions={merchantData.promotions} onSubmit={submitPromotion} onUpdate={updatePromotion} onNotify={showToast} />}
+          {activeMenu === 'promotion' && (
+            <PromotionPage
+              promotions={merchantData.promotions}
+              onSubmit={submitPromotion}
+              onUpdate={updatePromotion}
+              onUploadImage={uploadPromotionImage}
+              onNotify={showToast}
+            />
+          )}
         </section>
       </main>
       <Toast toast={toast} onClose={() => setToast(null)} />
