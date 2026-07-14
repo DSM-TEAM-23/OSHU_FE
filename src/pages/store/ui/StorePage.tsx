@@ -37,8 +37,6 @@ export function StorePage({
     name: store?.name ?? '',
     category: store?.category ?? '베이커리',
     address: store?.address ?? '',
-    latitude: store?.latitude ?? 36.3628,
-    longitude: store?.longitude ?? 127.3441,
     description: store?.description ?? '',
     phone: store?.phone ?? '',
     openingHours: store?.openingHours ?? '',
@@ -55,8 +53,8 @@ export function StorePage({
   };
 
   const submit = async () => {
-    if (!form.name.trim() || !form.address.trim() || !Number.isFinite(form.latitude) || !Number.isFinite(form.longitude)) {
-      onNotify('상호명, 주소, 좌표를 올바르게 입력해주세요.', 'error');
+    if (!form.name.trim() || !form.address.trim()) {
+      onNotify('상호명과 주소를 올바르게 입력해주세요.', 'error');
       return;
     }
 
@@ -132,8 +130,6 @@ export function StorePage({
               </label>
               <label>연락처<input value={form.phone ?? ''} onChange={(event) => updateForm({ phone: event.target.value })} /></label>
               <label className="wide">주소 *<input value={form.address} onChange={(event) => updateForm({ address: event.target.value })} /></label>
-              <label>위도 *<input type="number" value={form.latitude} onChange={(event) => updateForm({ latitude: Number(event.target.value) })} /></label>
-              <label>경도 *<input type="number" value={form.longitude} onChange={(event) => updateForm({ longitude: Number(event.target.value) })} /></label>
               <label>오픈 시간<input type="time" value={form.openingTime} onChange={(event) => updateForm({ openingTime: event.target.value })} /></label>
               <label>마감 시간<input type="time" value={form.closingTime} onChange={(event) => updateForm({ closingTime: event.target.value })} /></label>
               <div className="wide">

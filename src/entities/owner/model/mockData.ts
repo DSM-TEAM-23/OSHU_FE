@@ -14,8 +14,6 @@ export const createEmptySignupDraft = (): SignupDraft => ({
   category: '베이커리',
   description: '',
   address: '',
-  latitude: 36.3628,
-  longitude: 127.3441,
   phone: '',
   openingHours: '',
   openingTime: '',

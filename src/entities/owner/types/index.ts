@@ -29,8 +29,6 @@ export type CreateStoreRequest = {
   category: StoreCategory;
   description?: string;
   address: string;
-  latitude: number;
-  longitude: number;
   phone?: string;
   openingHours?: string;
 };

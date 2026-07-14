@@ -176,8 +176,6 @@ export function App() {
         category: draft.category,
         description: draft.description,
         address: draft.address,
-        latitude: draft.latitude,
-        longitude: draft.longitude,
         phone: draft.phone,
         openingHours,
       });
