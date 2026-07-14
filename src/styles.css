@@ -847,12 +847,17 @@ select:focus {
   width: min(680px, 100%);
 }
 
-.two-col-auth {
+.signup-form-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 18px 22px;
 }
 
-.two-col-auth .wide,
-.signup-summary.wide {
+.signup-form-grid label {
+  min-width: 0;
+}
+
+.signup-form-grid .wide {
   grid-column: 1 / -1;
 }
 
@@ -926,25 +931,6 @@ button:disabled {
   color: var(--danger);
   font-size: 12px;
   font-weight: 700;
-}
-
-.signup-summary {
-  padding: 12px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  background: var(--surface-muted);
-}
-
-.signup-summary strong {
-  display: block;
-  margin-bottom: 6px;
-}
-
-.signup-summary p {
-  margin: 0;
-  color: var(--text);
-  font-size: 12px;
-  line-height: 1.5;
 }
 
 .signup-entry {
@@ -1096,10 +1082,6 @@ button:disabled {
 
 .modal-actions {
   padding: 20px 28px;
-}
-
-.signup-modal .two-col-auth {
-  gap: 18px 22px;
 }
 
 .signup-modal input,

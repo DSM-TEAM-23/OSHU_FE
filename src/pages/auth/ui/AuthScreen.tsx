@@ -25,7 +25,7 @@ export function AuthScreen({
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
   const [draft, setDraft] = useState<SignupDraft>(createEmptySignupDraft());
 
-  const signupSteps = ['계정 정보', '가게 정보', '위치 정보', '운영 정보'];
+  const signupSteps = ['계정 정보', '가게 소개', '주소·연락처', '운영 시간'];
 
   const updateDraft = (patch: Partial<SignupDraft>) => {
     setDraft((prev) => ({ ...prev, ...patch }));
@@ -50,7 +50,7 @@ export function AuthScreen({
   const canGoNext = () => {
     if (signupStep === 0) return draft.loginId && draft.password && draft.password === draft.passwordConfirm;
     if (signupStep === 1) return draft.name && draft.category && draft.description;
-    if (signupStep === 2) return draft.address && draft.phone && draft.latitude && draft.longitude;
+    if (signupStep === 2) return draft.address && draft.phone;
     return draft.openingTime && draft.closingTime;
   };
 
@@ -135,7 +135,7 @@ export function AuthScreen({
               </div>
 
               {signupStep === 0 && (
-                <div className="auth-form two-col-auth modal-body">
+                <div className="auth-form signup-form-grid modal-body">
                   <label>
                     계정 ID *
                     <input value={draft.loginId} onChange={(event) => updateDraft({ loginId: event.target.value })} placeholder="예: oshu_owner01" />
@@ -152,7 +152,7 @@ export function AuthScreen({
               )}
 
               {signupStep === 1 && (
-                <div className="auth-form two-col-auth modal-body">
+                <div className="auth-form signup-form-grid modal-body">
                   <label>
                     상호명 *
                     <input value={draft.name} onChange={(event) => updateDraft({ name: event.target.value })} placeholder="가게 이름" />
@@ -171,28 +171,20 @@ export function AuthScreen({
               )}
 
               {signupStep === 2 && (
-                <div className="auth-form two-col-auth modal-body">
+                <div className="auth-form signup-form-grid modal-body">
                   <label className="wide">
                     가게 주소 *
                     <input value={draft.address} onChange={(event) => updateDraft({ address: event.target.value })} placeholder="도로명 주소를 입력하세요" />
                   </label>
-                  <label>
+                  <label className="wide">
                     가게 연락처 *
                     <input value={draft.phone} onChange={(event) => updateDraft({ phone: event.target.value })} placeholder="042-000-0000" />
-                  </label>
-                  <label>
-                    지도 위도 *
-                    <input type="number" value={draft.latitude} onChange={(event) => updateDraft({ latitude: Number(event.target.value) })} />
-                  </label>
-                  <label>
-                    지도 경도 *
-                    <input type="number" value={draft.longitude} onChange={(event) => updateDraft({ longitude: Number(event.target.value) })} />
                   </label>
                 </div>
               )}
 
               {signupStep === 3 && (
-                <div className="auth-form two-col-auth modal-body">
+                <div className="auth-form signup-form-grid modal-body">
                   <label>
                     오픈 시간 *
                     <input type="time" value={draft.openingTime} onChange={(event) => updateDraft({ openingTime: event.target.value })} />
@@ -201,10 +193,6 @@ export function AuthScreen({
                     마감 시간 *
                     <input type="time" value={draft.closingTime} onChange={(event) => updateDraft({ closingTime: event.target.value })} />
                   </label>
-                  <div className="signup-summary wide">
-                    <strong>검토 안내</strong>
-                    <p>등록이 완료되면 가게 정보는 검토중 상태로 저장됩니다.</p>
-                  </div>
                 </div>
               )}
 
