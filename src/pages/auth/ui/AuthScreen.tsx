@@ -43,7 +43,7 @@ export function AuthScreen({
     const result = await onLogin(loginId, loginPassword);
     const message = result.message ?? '아이디 또는 비밀번호가 올바르지 않습니다.';
     setLoginError(result.ok ? '' : message);
-    onNotify(result.ok ? '로그인되었습니다.' : message, result.ok ? 'success' : 'error');
+    onNotify(result.ok ? result.message ?? '로그인되었습니다.' : message, result.ok ? 'success' : 'error');
     setIsSubmitting(false);
   };
 

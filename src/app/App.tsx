@@ -73,16 +73,26 @@ export function App() {
   };
 
   const handleLogin = async (loginId: string, password: string) => {
-    try {
-      const token = await ownerApi.login({ loginId: loginId.trim(), password });
-      const nextMerchantData = await loadMerchantData(token.accessToken);
+    const trimmedLoginId = loginId.trim();
+    let token: Awaited<ReturnType<typeof ownerApi.login>>;
 
-      setSession({ accessToken: token.accessToken, tokenType: token.tokenType, loginId: loginId.trim() });
+    try {
+      token = await ownerApi.login({ loginId: trimmedLoginId, password });
+    } catch (error) {
+      return { ok: false, message: '아이디 또는 비밀번호가 올바르지 않습니다.' };
+    }
+
+    setSession({ accessToken: token.accessToken, tokenType: token.tokenType, loginId: trimmedLoginId });
+
+    try {
+      const nextMerchantData = await loadMerchantData(token.accessToken);
       setMerchantData(nextMerchantData);
       setActiveMenu(nextMerchantData.store ? 'dashboard' : 'store');
       return { ok: true };
     } catch (error) {
-      return { ok: false, message: '아이디 또는 비밀번호가 올바르지 않습니다.' };
+      setMerchantData(createEmptyMerchantData());
+      setActiveMenu('store');
+      return { ok: true, message: '로그인은 완료됐지만 가게 정보를 불러오지 못했습니다.' };
     }
   };
 

@@ -17,6 +17,12 @@ import type {
 
 const DEFAULT_API_BASE_URL = '/api';
 
+type RawTokenResponse = TokenResponse & {
+  access_token?: string;
+  token?: string;
+  type?: string;
+};
+
 const normalizeBaseUrl = (baseUrl: string) => {
   const trimmedBaseUrl = baseUrl.trim().replace(/\/$/, '');
   if (!trimmedBaseUrl) return DEFAULT_API_BASE_URL;
@@ -26,6 +32,17 @@ const normalizeBaseUrl = (baseUrl: string) => {
 };
 
 const API_BASE_URL = normalizeBaseUrl(import.meta.env.VITE_OSHU_API_BASE_URL ?? DEFAULT_API_BASE_URL);
+
+const normalizeTokenResponse = (token: RawTokenResponse): TokenResponse => {
+  const accessToken = token.accessToken ?? token.access_token ?? token.token;
+  if (!accessToken) {
+    throw new Error('LOGIN_TOKEN_MISSING');
+  }
+  return {
+    accessToken,
+    tokenType: token.tokenType ?? token.type,
+  };
+};
 
 async function request<TResponse>(path: string, options: RequestInit = {}): Promise<TResponse> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
@@ -49,8 +66,9 @@ async function request<TResponse>(path: string, options: RequestInit = {}): Prom
 }
 
 function authHeaders(accessToken: string) {
+  const authorization = accessToken.startsWith('Bearer ') ? accessToken : `Bearer ${accessToken}`;
   return {
-    Authorization: `Bearer ${accessToken}`,
+    Authorization: authorization,
   };
 }
 
@@ -62,11 +80,12 @@ export const ownerApi = {
     });
   },
 
-  login(body: LoginRequest) {
-    return request<TokenResponse>('/auth/login', {
+  async login(body: LoginRequest) {
+    const token = await request<RawTokenResponse>('/auth/login', {
       method: 'POST',
       body: JSON.stringify(body),
     });
+    return normalizeTokenResponse(token);
   },
 
   getMyStores(accessToken: string) {
