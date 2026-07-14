@@ -21,6 +21,7 @@ const normalizeBaseUrl = (baseUrl: string) => {
   const trimmedBaseUrl = baseUrl.trim().replace(/\/$/, '');
   if (!trimmedBaseUrl) return DEFAULT_API_BASE_URL;
   if (/^https?:\/\//.test(trimmedBaseUrl)) return trimmedBaseUrl;
+  if (trimmedBaseUrl.startsWith('/')) return trimmedBaseUrl;
   return `http://${trimmedBaseUrl}`;
 };
 
