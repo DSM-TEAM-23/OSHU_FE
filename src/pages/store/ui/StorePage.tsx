@@ -85,9 +85,11 @@ export function StorePage({
             </div>
             <div className="profile-badges">
               <span className={`plain-badge congestion-${store.crowdStatus?.level ?? 'RELAXED'}`}>
-                {congestionLabel(store.crowdStatus?.level)}
-                {typeof store.crowdStatus?.estimatedWaitingMinutes === 'number' ? ` · ${store.crowdStatus.estimatedWaitingMinutes}분` : ''}
+                혼잡도 {congestionLabel(store.crowdStatus?.level)}
               </span>
+              {typeof store.crowdStatus?.estimatedWaitingMinutes === 'number' && (
+                <span className="plain-badge">예상 대기 {store.crowdStatus.estimatedWaitingMinutes}분</span>
+              )}
             </div>
           </div>
         ) : (

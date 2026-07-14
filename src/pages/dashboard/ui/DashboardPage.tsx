@@ -25,11 +25,11 @@ export function DashboardPage({
           </div>
           <div className="profile-badges">
             <span className={`plain-badge congestion-${merchantData.store?.crowdStatus?.level ?? 'RELAXED'}`}>
-              {congestionLabel(merchantData.store?.crowdStatus?.level)}
-              {typeof merchantData.store?.crowdStatus?.estimatedWaitingMinutes === 'number'
-                ? ` · ${merchantData.store.crowdStatus.estimatedWaitingMinutes}분`
-                : ''}
+              혼잡도 {congestionLabel(merchantData.store?.crowdStatus?.level)}
             </span>
+            {typeof merchantData.store?.crowdStatus?.estimatedWaitingMinutes === 'number' && (
+              <span className="plain-badge">예상 대기 {merchantData.store.crowdStatus.estimatedWaitingMinutes}분</span>
+            )}
           </div>
         </div>
 

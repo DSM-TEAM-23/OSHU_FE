@@ -39,7 +39,7 @@ export function TimeSaleTable({
   );
 }
 
-export function PromotionTable({ items }: { items: PromotionDetail[] }) {
+export function PromotionTable({ items, onEdit }: { items: PromotionDetail[]; onEdit?: (item: PromotionDetail) => void }) {
   return (
     <div className="data-table-wrap">
       <table className="data-table">
@@ -51,7 +51,7 @@ export function PromotionTable({ items }: { items: PromotionDetail[] }) {
               <td>{promotionTypeLabel(item.type)}</td>
               <td><strong>{item.title}</strong><p>{item.content}</p></td>
               <td>{formatPeriod(item.startAt, item.endAt)}</td>
-              <td><button className="table-button">수정</button></td>
+              <td>{onEdit && <button className="table-button" onClick={() => onEdit(item)}>수정</button>}</td>
             </tr>
           ))}
           {items.length === 0 && <tr><td colSpan={5} className="empty-cell">등록된 홍보 게시물이 없습니다.</td></tr>}

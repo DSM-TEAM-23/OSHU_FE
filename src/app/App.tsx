@@ -235,6 +235,25 @@ export function App() {
     return warning;
   };
 
+  const updatePromotion = async (promotionId: number, body: PromotionRequest) => {
+    if (!session || !merchantData?.store?.storeId) return;
+    let warning: string | undefined;
+    let updatedPromotion: PromotionDetail | undefined;
+    try {
+      updatedPromotion = await ownerApi.updatePromotion(session.accessToken, promotionId, body);
+    } catch (error) {
+      warning = getRequestFailureMessage(error);
+    }
+
+    setMerchantData((prev) => (prev ? {
+      ...prev,
+      promotions: prev.promotions.map((item) => item.promotionId === promotionId
+        ? (updatedPromotion ?? { ...item, ...body })
+        : item),
+    } : prev));
+    return warning;
+  };
+
   const openTimeSalePage = () => {
     setActiveMenu('timesale');
   };
@@ -296,7 +315,7 @@ export function App() {
               onNotify={showToast}
             />
           )}
-          {activeMenu === 'promotion' && <PromotionPage promotions={merchantData.promotions} onSubmit={submitPromotion} onNotify={showToast} />}
+          {activeMenu === 'promotion' && <PromotionPage promotions={merchantData.promotions} onSubmit={submitPromotion} onUpdate={updatePromotion} onNotify={showToast} />}
         </section>
       </main>
       <Toast toast={toast} onClose={() => setToast(null)} />

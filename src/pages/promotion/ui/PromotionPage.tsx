@@ -7,10 +7,12 @@ import { PromotionTable } from '../../../shared/ui/tables';
 export function PromotionPage({
   promotions,
   onSubmit,
+  onUpdate,
   onNotify,
 }: {
   promotions: PromotionDetail[];
   onSubmit: (body: PromotionRequest) => Promise<string | undefined>;
+  onUpdate: (promotionId: number, body: PromotionRequest) => Promise<string | undefined>;
   onNotify: (message: string, type?: 'success' | 'error') => void;
 }) {
   const [form, setForm] = useState<PromotionRequest>({
@@ -23,18 +25,44 @@ export function PromotionPage({
   });
   const [message, setMessage] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
 
   const updateForm = (patch: Partial<PromotionRequest>) => {
     setForm((prev) => ({ ...prev, ...patch }));
   };
 
-  const submit = async () => {
-    const warning = await onSubmit(form);
-    const message = warning ? '화면에는 등록되었습니다.' : '등록되었습니다.';
-    setMessage(message);
-    onNotify(warning ?? '홍보 게시물을 등록했습니다.', warning ? 'error' : 'success');
-    setIsModalOpen(false);
+  const resetForm = () => {
     setForm({ type: 'NEW_MENU', title: '', content: '', imageUrl: '', startAt: '', endAt: '' });
+    setEditingId(null);
+  };
+
+  const openCreateModal = () => {
+    resetForm();
+    setIsModalOpen(true);
+  };
+
+  const openEditModal = (item: PromotionDetail) => {
+    setForm({
+      type: item.type,
+      title: item.title,
+      content: item.content ?? '',
+      imageUrl: item.imageUrl ?? '',
+      startAt: item.startAt ?? '',
+      endAt: item.endAt ?? '',
+    });
+    setEditingId(item.promotionId);
+    setIsModalOpen(true);
+  };
+
+  const submit = async () => {
+    const warning = editingId ? await onUpdate(editingId, form) : await onSubmit(form);
+    const message = warning
+      ? `화면에는 ${editingId ? '수정' : '등록'}되었습니다.`
+      : `${editingId ? '수정' : '등록'}되었습니다.`;
+    setMessage(message);
+    onNotify(warning ?? `홍보 게시물을 ${editingId ? '수정' : '등록'}했습니다.`, warning ? 'error' : 'success');
+    setIsModalOpen(false);
+    resetForm();
   };
 
   return (
@@ -42,9 +70,9 @@ export function PromotionPage({
       <section className="card">
         <div className="section-heading">
           <div><p className="eyebrow">가게 홍보</p><h3>등록 내역</h3></div>
-          <button className="primary-button" onClick={() => setIsModalOpen(true)}><Plus size={18} />새 홍보</button>
+          <button className="primary-button" onClick={openCreateModal}><Plus size={18} />새 홍보</button>
         </div>
-        <PromotionTable items={promotions} />
+        <PromotionTable items={promotions} onEdit={openEditModal} />
         {message && <p className="form-success">{message}</p>}
       </section>
 
@@ -53,10 +81,10 @@ export function PromotionPage({
           <section className="work-modal" role="dialog" aria-modal="true" aria-label="홍보 게시물 등록">
             <header className="modal-header">
               <div>
-                <p className="eyebrow">신규 등록</p>
+                <p className="eyebrow">{editingId ? '정보 수정' : '신규 등록'}</p>
                 <h3>홍보 게시물</h3>
               </div>
-              <button className="modal-close" onClick={() => setIsModalOpen(false)} aria-label="닫기">×</button>
+              <button className="modal-close" onClick={() => { setIsModalOpen(false); resetForm(); }} aria-label="닫기">×</button>
             </header>
 
             <div className="form-grid modal-body">
@@ -74,8 +102,8 @@ export function PromotionPage({
             </div>
 
             <footer className="modal-actions">
-              <button className="ghost-button" onClick={() => setIsModalOpen(false)}>취소</button>
-              <button className="primary-button" onClick={submit}><Save size={18} />등록</button>
+              <button className="ghost-button" onClick={() => { setIsModalOpen(false); resetForm(); }}>취소</button>
+              <button className="primary-button" onClick={submit}><Save size={18} />{editingId ? '수정' : '등록'}</button>
             </footer>
           </section>
         </div>
