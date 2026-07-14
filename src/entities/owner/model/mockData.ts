@@ -12,6 +12,7 @@ export const createEmptySignupDraft = (): SignupDraft => ({
   passwordConfirm: '',
   name: '',
   category: '베이커리',
+  customCategory: '',
   description: '',
   address: '',
   phone: '',

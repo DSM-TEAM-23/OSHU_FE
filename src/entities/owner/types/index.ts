@@ -27,6 +27,7 @@ export type TokenResponse = {
 export type CreateStoreRequest = {
   name: string;
   category: StoreCategory;
+  customCategory?: string;
   description?: string;
   address: string;
   phone?: string;
@@ -34,7 +35,11 @@ export type CreateStoreRequest = {
 };
 
 export type UpdateStoreRequest = {
+  name?: string;
+  category?: StoreCategory;
+  customCategory?: string;
   description?: string;
+  address?: string;
   phone?: string;
   openingHours?: string;
 };

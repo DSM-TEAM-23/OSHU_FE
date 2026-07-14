@@ -49,7 +49,8 @@ export function AuthScreen({
 
   const canGoNext = () => {
     if (signupStep === 0) return draft.loginId && draft.password && draft.password === draft.passwordConfirm;
-    if (signupStep === 1) return draft.name && draft.category && draft.description;
+    if (signupStep === 1) return draft.name && draft.category && draft.description
+      && (draft.category !== '기타' || !!draft.customCategory?.trim());
     if (signupStep === 2) return draft.address && draft.phone;
     return draft.openingTime && draft.closingTime;
   };
@@ -159,10 +160,22 @@ export function AuthScreen({
                   </label>
                   <label>
                     업종 *
-                    <select value={draft.category} onChange={(event) => updateDraft({ category: event.target.value as StoreCategory })}>
+                    <select
+                      value={draft.category}
+                      onChange={(event) => updateDraft({
+                        category: event.target.value as StoreCategory,
+                        customCategory: event.target.value === '기타' ? draft.customCategory : '',
+                      })}
+                    >
                       {categoryOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
                     </select>
                   </label>
+                  {draft.category === '기타' && (
+                    <label>
+                      직접 입력 업종 *
+                      <input value={draft.customCategory ?? ''} onChange={(event) => updateDraft({ customCategory: event.target.value })} placeholder="예: 꽃집" />
+                    </label>
+                  )}
                   <label className="wide">
                     가게 소개 *
                     <textarea value={draft.description} onChange={(event) => updateDraft({ description: event.target.value })} placeholder="가게 소개를 입력하세요" />

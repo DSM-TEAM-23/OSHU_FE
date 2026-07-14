@@ -35,7 +35,10 @@ export function StorePage({
   const initialHours = splitOpeningHours(store?.openingHours);
   const [form, setForm] = useState<StoreFormState>({
     name: store?.name ?? '',
-    category: store?.category ?? '베이커리',
+    category: categoryOptions.some((option) => option.value === (store?.category ?? ''))
+      ? (store?.category ?? '베이커리')
+      : '기타',
+    customCategory: store && categoryOptions.some((option) => option.value === store.category) ? '' : (store?.category ?? ''),
     address: store?.address ?? '',
     description: store?.description ?? '',
     phone: store?.phone ?? '',
@@ -55,6 +58,10 @@ export function StorePage({
   const submit = async () => {
     if (!form.name.trim() || !form.address.trim()) {
       onNotify('상호명과 주소를 올바르게 입력해주세요.', 'error');
+      return;
+    }
+    if (form.category === '기타' && !form.customCategory?.trim()) {
+      onNotify('기타 업종명을 입력해주세요.', 'error');
       return;
     }
 
@@ -124,10 +131,22 @@ export function StorePage({
               <label>상호명 *<input value={form.name} onChange={(event) => updateForm({ name: event.target.value })} /></label>
               <label>
                 업종 *
-                <select value={form.category} onChange={(event) => updateForm({ category: event.target.value as StoreCategory })}>
+                <select
+                  value={form.category}
+                  onChange={(event) => updateForm({
+                    category: event.target.value as StoreCategory,
+                    customCategory: event.target.value === '기타' ? form.customCategory : '',
+                  })}
+                >
                   {categoryOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
                 </select>
               </label>
+              {form.category === '기타' && (
+                <label>
+                  직접 입력 업종 *
+                  <input value={form.customCategory ?? ''} onChange={(event) => updateForm({ customCategory: event.target.value })} placeholder="예: 꽃집" />
+                </label>
+              )}
               <label>연락처<input value={form.phone ?? ''} onChange={(event) => updateForm({ phone: event.target.value })} /></label>
               <label className="wide">주소 *<input value={form.address} onChange={(event) => updateForm({ address: event.target.value })} /></label>
               <label>오픈 시간<input type="time" value={form.openingTime} onChange={(event) => updateForm({ openingTime: event.target.value })} /></label>

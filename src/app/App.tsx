@@ -174,6 +174,7 @@ export function App() {
       const createdStore = await ownerApi.createStore(token.accessToken, {
         name: draft.name,
         category: draft.category,
+        customCategory: draft.category === '기타' ? draft.customCategory?.trim() : undefined,
         description: draft.description,
         address: draft.address,
         phone: draft.phone,
@@ -212,6 +213,10 @@ export function App() {
       let updatedCrowdStatus = merchantData.store.crowdStatus;
       try {
         updatedStore = await ownerApi.updateStore(session.accessToken, merchantData.store.storeId, {
+          name: body.name,
+          category: body.category,
+          customCategory: body.category === '기타' ? body.customCategory?.trim() : undefined,
+          address: body.address,
           description: body.description,
           phone: body.phone,
           openingHours: body.openingHours,
