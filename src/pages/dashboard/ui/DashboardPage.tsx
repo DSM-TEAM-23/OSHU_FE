@@ -25,8 +25,11 @@ export function DashboardPage({
           </div>
           <div className="profile-badges">
             <span className="plain-badge">{storeStatusLabel(merchantData.store?.status)}</span>
-            <span className={`plain-badge congestion-${merchantData.store?.congestionStatus ?? 'RELAXED'}`}>
-              {congestionLabel(merchantData.store?.congestionStatus)}
+            <span className={`plain-badge congestion-${merchantData.store?.crowdStatus?.level ?? 'RELAXED'}`}>
+              {congestionLabel(merchantData.store?.crowdStatus?.level)}
+              {typeof merchantData.store?.crowdStatus?.estimatedWaitingMinutes === 'number'
+                ? ` · ${merchantData.store.crowdStatus.estimatedWaitingMinutes}분`
+                : ''}
             </span>
           </div>
         </div>

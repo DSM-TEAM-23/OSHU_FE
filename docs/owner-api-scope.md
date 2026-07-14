@@ -1,41 +1,28 @@
-# OSHU 점주센터 사용 API 범위
+# OSHU 점주 웹 API 범위
 
-첨부된 OpenAPI 명세 중 점주 웹 프론트에서 사용하는 API만 정리합니다. 소비자용 지도, 가게 목록, 행사 피드 조회 API는 제외합니다.
+새 OpenAPI 명세 기준으로 점주 웹에서 사용하는 API만 정리합니다.
+서버 배포 후 `.env`에 `VITE_OSHU_API_BASE_URL` 값을 넣으면 `src/entities/owner/api/index.ts`에서 바로 사용합니다.
 
 ## Auth
+- `POST /auth/signup` — `loginId`, `password`
+- `POST /auth/login` — `loginId`, `password` → `accessToken`, `tokenType`
 
-| Method | Path | 용도 | Request |
-| --- | --- | --- | --- |
-| POST | `/auth/signup` | 점주 계정 생성 | `SignUpRequest` |
-| POST | `/auth/login` | 로그인 및 토큰 발급 | `LoginRequest` |
+## Owner Stores
+- `GET /owner/stores` — 내 가게 목록
+- `POST /owner/stores` — 가게 등록
+- `GET /owner/stores/{storeId}` — 내 가게 상세
+- `PATCH /owner/stores/{storeId}` — 소개, 연락처, 영업시간 수정
+- `PATCH /owner/stores/{storeId}/crowd-status` — 혼잡도, 예상 대기시간 수정
 
-## Store
+## Owner Time Sales
+- `POST /owner/stores/{storeId}/time-sales` — 타임세일 등록
+- `PATCH /owner/time-sales/{timeSaleId}` — 타임세일 수정
+- `PATCH /owner/time-sales/{timeSaleId}/close` — 타임세일 종료
 
-| Method | Path | 용도 | Request/Response |
-| --- | --- | --- | --- |
-| GET | `/owner/stores` | 내 가게 목록 조회 | `OwnerStore[]` |
-| POST | `/owner/stores` | 내 가게 등록 | `CreateStoreRequest` |
-| GET | `/owner/stores/{storeId}` | 내 가게 상세 조회 | `StoreDetail` |
-| PATCH | `/owner/stores/{storeId}` | 내 가게 정보 수정 | `UpdateStoreRequest` |
+## Owner Promotions
+- `POST /owner/stores/{storeId}/promotions` — 홍보 등록
+- `PATCH /owner/promotions/{promotionId}` — 홍보 수정
+- `DELETE /owner/promotions/{promotionId}` — 홍보 삭제
 
-## Promotion
-
-| Method | Path | 용도 | Request |
-| --- | --- | --- | --- |
-| POST | `/owner/stores/{storeId}/promotions` | 홍보 등록 | `PromotionRequest` |
-| PATCH | `/owner/promotions/{promotionId}` | 홍보 수정 | `PromotionRequest` |
-| DELETE | `/owner/promotions/{promotionId}` | 홍보 삭제 | - |
-
-## TimeSale
-
-| Method | Path | 용도 | Request |
-| --- | --- | --- | --- |
-| POST | `/owner/stores/{storeId}/time-sales` | 타임세일 등록 | `TimeSaleRequest` |
-| PATCH | `/owner/time-sales/{timeSaleId}` | 타임세일 수정 | `TimeSaleRequest` |
-| PATCH | `/owner/time-sales/{timeSaleId}/close` | 타임세일 종료 | - |
-
-## 프론트 타입 위치
-
-- API 타입: `src/types/oshu.ts`
-- API 클라이언트: `src/api/ownerApi.ts`
-
+## 제외한 API
+소비자 앱용 조회 API인 `/stores`, `/stores/map`, `/promotions` 공개 조회 계열은 점주 웹 화면에서 제외합니다.

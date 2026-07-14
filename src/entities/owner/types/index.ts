@@ -1,9 +1,9 @@
-export type StoreCategory = 'FOOD' | 'CAFE' | 'BAKERY' | 'MART' | 'MARKET';
+export type StoreCategory = string;
 export type StoreApprovalStatus = 'PENDING_APPROVAL' | 'ACTIVE' | 'REJECTED';
-export type StoreCongestionStatus = 'VERY_BUSY' | 'BUSY' | 'NORMAL' | 'RELAXED';
-export type PromotionType = 'DISCOUNT' | 'EVENT' | 'NEW_MENU' | 'NOTICE';
-export type PromotionStatus = 'SCHEDULED' | 'ACTIVE' | 'ENDED' | 'SOLD_OUT';
-export type TimeSaleStatus = 'SCHEDULED' | 'ACTIVE' | 'ENDED' | 'SOLD_OUT';
+export type CrowdLevel = 'RELAXED' | 'NORMAL' | 'BUSY' | 'VERY_BUSY';
+export type PromotionType = string;
+export type PromotionStatus = string;
+export type TimeSaleStatus = string;
 
 export type SignUpRequest = {
   loginId: string;
@@ -15,18 +15,17 @@ export type LoginRequest = {
   password: string;
 };
 
-export type LoginResponse = {
-  userId: number;
-  loginId: string;
-  nickname: string;
-  role: 'CONSUMER' | 'OWNER';
+export type MessageResponse = {
+  message?: string;
+};
+
+export type TokenResponse = {
   accessToken: string;
-  refreshToken: string;
+  tokenType?: string;
 };
 
 export type CreateStoreRequest = {
   name: string;
-  businessNumber: string;
   category: StoreCategory;
   description?: string;
   address: string;
@@ -40,27 +39,45 @@ export type UpdateStoreRequest = {
   description?: string;
   phone?: string;
   openingHours?: string;
-  imageUrls?: string[];
 };
 
 export type OwnerStore = {
   storeId: number;
   name: string;
-  thumbnailUrl?: string;
   category: StoreCategory;
-  distanceMeter?: number;
-  status: StoreApprovalStatus;
-  activePromotionCount: number;
+  address?: string;
+  latitude?: number;
+  longitude?: number;
+  crowdLevel?: CrowdLevel;
+  timeSaleActive?: boolean;
+  externalData?: boolean;
 };
 
-export type StoreDetail = OwnerStore & {
-  businessNumber?: string;
+export type CrowdStatusRequest = {
+  level: CrowdLevel;
+  estimatedWaitingMinutes: number;
+};
+
+export type CrowdStatusResponse = {
+  level: CrowdLevel;
+  label?: string;
+  estimatedWaitingMinutes?: number;
+};
+
+export type StoreDetail = {
+  storeId: number;
+  name: string;
+  category: StoreCategory;
   description?: string;
   address: string;
+  latitude?: number;
+  longitude?: number;
   phone?: string;
   openingHours?: string;
-  congestionStatus?: StoreCongestionStatus;
-  imageUrls?: string[];
+  crowdStatus?: CrowdStatusResponse;
+  promotions?: PromotionDetail[];
+  timeSales?: TimeSale[];
+  status?: StoreApprovalStatus;
 };
 
 export type PromotionRequest = {
@@ -76,10 +93,9 @@ export type PromotionDetail = {
   promotionId: number;
   storeId: number;
   storeName: string;
-  type: 'TIME_SALE' | 'DISCOUNT' | 'EVENT' | 'NEW_MENU' | 'NOTICE';
+  type: string;
   title: string;
   imageUrl?: string;
-  remainingMinutes?: number;
   status: PromotionStatus;
   content?: string;
   startAt?: string;
@@ -97,8 +113,8 @@ export type TimeSaleRequest = {
 
 export type TimeSale = TimeSaleRequest & {
   timeSaleId: number;
+  storeId?: number;
   status: TimeSaleStatus;
-  remainingMinutes?: number;
 };
 
 export type ErrorResponse = {

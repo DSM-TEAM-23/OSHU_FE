@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { MapPin, Pencil, Save, Store } from 'lucide-react';
-import type { CreateStoreRequest, StoreCategory, StoreCongestionStatus, StoreDetail } from '../../../entities/owner/types';
+import type { CreateStoreRequest, CrowdLevel, CrowdStatusRequest, StoreCategory, StoreDetail } from '../../../entities/owner/types';
 import { categoryOptions } from '../../../entities/owner/model/options';
 import { congestionLabel, storeStatusLabel } from '../../../shared/lib/format';
 
-const congestionOptions: Array<{ value: StoreCongestionStatus; label: string }> = [
+const congestionOptions: Array<{ value: CrowdLevel; label: string }> = [
   { value: 'VERY_BUSY', label: '매우 혼잡' },
   { value: 'BUSY', label: '혼잡' },
   { value: 'NORMAL', label: '보통' },
@@ -12,14 +12,15 @@ const congestionOptions: Array<{ value: StoreCongestionStatus; label: string }> 
 ];
 
 const splitOpeningHours = (openingHours?: string) => {
-  const [openingTime = '', closingTime = ''] = openingHours?.split('-') ?? [];
+  const [openingTime = '', closingTime = ''] = openingHours?.split('-').map((time) => time.trim()) ?? [];
   return { openingTime, closingTime };
 };
 
 type StoreFormState = CreateStoreRequest & {
   openingTime: string;
   closingTime: string;
-  congestionStatus: StoreCongestionStatus;
+  crowdLevel: CrowdLevel;
+  estimatedWaitingMinutes: number;
 };
 
 export function StorePage({
@@ -28,23 +29,23 @@ export function StorePage({
   onNotify,
 }: {
   store: StoreDetail | null;
-  onSubmit: (body: CreateStoreRequest, extra: { congestionStatus: StoreCongestionStatus }) => Promise<string | undefined>;
+  onSubmit: (body: CreateStoreRequest, crowdStatus: CrowdStatusRequest) => Promise<string | undefined>;
   onNotify: (message: string, type?: 'success' | 'error') => void;
 }) {
   const initialHours = splitOpeningHours(store?.openingHours);
   const [form, setForm] = useState<StoreFormState>({
     name: store?.name ?? '',
-    businessNumber: store?.businessNumber ?? '',
-    category: store?.category ?? 'BAKERY',
+    category: store?.category ?? '베이커리',
     address: store?.address ?? '',
-    latitude: 36.3628,
-    longitude: 127.3441,
+    latitude: store?.latitude ?? 36.3628,
+    longitude: store?.longitude ?? 127.3441,
     description: store?.description ?? '',
     phone: store?.phone ?? '',
     openingHours: store?.openingHours ?? '',
     openingTime: initialHours.openingTime,
     closingTime: initialHours.closingTime,
-    congestionStatus: store?.congestionStatus ?? 'RELAXED',
+    crowdLevel: store?.crowdStatus?.level ?? 'RELAXED',
+    estimatedWaitingMinutes: store?.crowdStatus?.estimatedWaitingMinutes ?? 0,
   });
   const [message, setMessage] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(!store);
@@ -54,9 +55,12 @@ export function StorePage({
   };
 
   const submit = async () => {
-    const openingHours = form.openingTime && form.closingTime ? `${form.openingTime}-${form.closingTime}` : form.openingHours;
-    const { openingTime, closingTime, congestionStatus, ...requestBody } = form;
-    const warning = await onSubmit({ ...requestBody, openingHours }, { congestionStatus });
+    const openingHours = form.openingTime && form.closingTime ? `${form.openingTime} - ${form.closingTime}` : form.openingHours;
+    const { openingTime, closingTime, crowdLevel, estimatedWaitingMinutes, ...requestBody } = form;
+    const warning = await onSubmit(
+      { ...requestBody, openingHours },
+      { level: crowdLevel, estimatedWaitingMinutes },
+    );
     const message = warning ? '화면에는 저장되었습니다.' : '저장되었습니다.';
     setMessage(message);
     onNotify(warning ?? message, warning ? 'error' : 'success');
@@ -81,7 +85,10 @@ export function StorePage({
             </div>
             <div className="profile-badges">
               <span className="plain-badge">{storeStatusLabel(store.status)}</span>
-              <span className={`plain-badge congestion-${store.congestionStatus ?? 'RELAXED'}`}>{congestionLabel(store.congestionStatus)}</span>
+              <span className={`plain-badge congestion-${store.crowdStatus?.level ?? 'RELAXED'}`}>
+                {congestionLabel(store.crowdStatus?.level)}
+                {typeof store.crowdStatus?.estimatedWaitingMinutes === 'number' ? ` · ${store.crowdStatus.estimatedWaitingMinutes}분` : ''}
+              </span>
             </div>
           </div>
         ) : (
@@ -106,7 +113,6 @@ export function StorePage({
 
             <div className="form-grid modal-body">
               <label>상호명 *<input value={form.name} onChange={(event) => updateForm({ name: event.target.value })} /></label>
-              <label>사업자등록번호 *<input value={form.businessNumber} onChange={(event) => updateForm({ businessNumber: event.target.value })} /></label>
               <label>
                 업종 *
                 <select value={form.category} onChange={(event) => updateForm({ category: event.target.value as StoreCategory })}>
@@ -126,14 +132,15 @@ export function StorePage({
                     <button
                       key={option.value}
                       type="button"
-                      className={form.congestionStatus === option.value ? 'active' : ''}
-                      onClick={() => updateForm({ congestionStatus: option.value })}
+                      className={form.crowdLevel === option.value ? 'active' : ''}
+                      onClick={() => updateForm({ crowdLevel: option.value })}
                     >
                       {option.label}
                     </button>
                   ))}
                 </div>
               </div>
+              <label className="wide">예상 대기시간<input type="number" min={0} value={form.estimatedWaitingMinutes} onChange={(event) => updateForm({ estimatedWaitingMinutes: Number(event.target.value) })} /></label>
               <label className="wide">가게 소개<textarea value={form.description ?? ''} onChange={(event) => updateForm({ description: event.target.value })} /></label>
             </div>
 

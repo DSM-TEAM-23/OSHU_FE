@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { ImagePlus } from 'lucide-react';
 import type { StoreCategory } from '../../../entities/owner/types';
 import type { AuthMode, SignupDraft } from '../../../entities/owner/types/ui';
 import { categoryOptions } from '../../../entities/owner/model/options';
@@ -25,7 +24,7 @@ export function AuthScreen({
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
   const [draft, setDraft] = useState<SignupDraft>(createEmptySignupDraft());
 
-  const signupSteps = ['계정 정보', '사업자 정보', '가게 정보', '운영 정보'];
+  const signupSteps = ['계정 정보', '가게 정보', '위치 정보', '운영 정보'];
 
   const updateDraft = (patch: Partial<SignupDraft>) => {
     setDraft((prev) => ({ ...prev, ...patch }));
@@ -47,8 +46,8 @@ export function AuthScreen({
 
   const canGoNext = () => {
     if (signupStep === 0) return draft.loginId && draft.password && draft.password === draft.passwordConfirm;
-    if (signupStep === 1) return draft.businessNumber && draft.name && draft.category;
-    if (signupStep === 2) return draft.address && draft.phone && draft.description;
+    if (signupStep === 1) return draft.name && draft.category && draft.description;
+    if (signupStep === 2) return draft.address && draft.phone && draft.latitude && draft.longitude;
     return draft.openingTime && draft.closingTime;
   };
 
@@ -154,18 +153,18 @@ export function AuthScreen({
               {signupStep === 1 && (
                 <div className="auth-form two-col-auth modal-body">
                   <label>
-                    사업자등록번호 *
-                    <input value={draft.businessNumber} onChange={(event) => updateDraft({ businessNumber: event.target.value })} placeholder="000-00-00000" />
+                    상호명 *
+                    <input value={draft.name} onChange={(event) => updateDraft({ name: event.target.value })} placeholder="가게 이름" />
                   </label>
                   <label>
-                    상호명 *
-                    <input value={draft.name} onChange={(event) => updateDraft({ name: event.target.value })} placeholder="사업자등록증 상 상호" />
-                  </label>
-                  <label className="wide">
                     업종 *
                     <select value={draft.category} onChange={(event) => updateDraft({ category: event.target.value as StoreCategory })}>
                       {categoryOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
                     </select>
+                  </label>
+                  <label className="wide">
+                    가게 소개 *
+                    <textarea value={draft.description} onChange={(event) => updateDraft({ description: event.target.value })} placeholder="가게 소개를 입력하세요" />
                   </label>
                 </div>
               )}
@@ -181,15 +180,12 @@ export function AuthScreen({
                     <input value={draft.phone} onChange={(event) => updateDraft({ phone: event.target.value })} placeholder="042-000-0000" />
                   </label>
                   <label>
-                    대표 이미지
-                    <button className="field-button" type="button">
-                      <ImagePlus size={16} />
-                      추후 업로드
-                    </button>
+                    지도 위도 *
+                    <input type="number" value={draft.latitude} onChange={(event) => updateDraft({ latitude: Number(event.target.value) })} />
                   </label>
-                  <label className="wide">
-                    가게 소개 *
-                    <textarea value={draft.description} onChange={(event) => updateDraft({ description: event.target.value })} placeholder="가게 소개를 입력하세요" />
+                  <label>
+                    지도 경도 *
+                    <input type="number" value={draft.longitude} onChange={(event) => updateDraft({ longitude: Number(event.target.value) })} />
                   </label>
                 </div>
               )}
@@ -203,14 +199,6 @@ export function AuthScreen({
                   <label>
                     마감 시간 *
                     <input type="time" value={draft.closingTime} onChange={(event) => updateDraft({ closingTime: event.target.value })} />
-                  </label>
-                  <label>
-                    지도 위도 *
-                    <input type="number" value={draft.latitude} onChange={(event) => updateDraft({ latitude: Number(event.target.value) })} />
-                  </label>
-                  <label>
-                    지도 경도 *
-                    <input type="number" value={draft.longitude} onChange={(event) => updateDraft({ longitude: Number(event.target.value) })} />
                   </label>
                   <div className="signup-summary wide">
                     <strong>검토 안내</strong>

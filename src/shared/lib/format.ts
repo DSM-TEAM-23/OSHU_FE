@@ -1,4 +1,4 @@
-import type { PromotionDetail, PromotionRequest, StoreApprovalStatus, StoreCongestionStatus, TimeSale } from '../../entities/owner/types';
+import type { CrowdLevel, PromotionDetail, PromotionRequest, StoreApprovalStatus, TimeSale } from '../../entities/owner/types';
 
 export const formatPrice = (price: number) => `${price.toLocaleString()}원`;
 
@@ -11,7 +11,7 @@ export function storeStatusLabel(status?: StoreApprovalStatus) {
   return '검토중';
 }
 
-export function congestionLabel(status?: StoreCongestionStatus) {
+export function congestionLabel(status?: CrowdLevel) {
   if (status === 'VERY_BUSY') return '매우 혼잡';
   if (status === 'BUSY') return '혼잡';
   if (status === 'NORMAL') return '보통';

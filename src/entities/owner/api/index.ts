@@ -1,7 +1,9 @@
 import type {
   CreateStoreRequest,
+  CrowdStatusRequest,
+  CrowdStatusResponse,
   LoginRequest,
-  LoginResponse,
+  MessageResponse,
   OwnerStore,
   PromotionDetail,
   PromotionRequest,
@@ -9,10 +11,11 @@ import type {
   StoreDetail,
   TimeSale,
   TimeSaleRequest,
+  TokenResponse,
   UpdateStoreRequest,
 } from '../types';
 
-const API_BASE_URL = 'https://api.oshu.kr/api/v1';
+const API_BASE_URL = import.meta.env.VITE_OSHU_API_BASE_URL ?? 'http://localhost:8080';
 
 async function request<TResponse>(path: string, options: RequestInit = {}): Promise<TResponse> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
@@ -43,27 +46,27 @@ function authHeaders(accessToken: string) {
 
 export const ownerApi = {
   signUp(body: SignUpRequest) {
-    return request('/auth/signup', {
+    return request<MessageResponse>('/auth/signup', {
       method: 'POST',
       body: JSON.stringify(body),
     });
   },
 
   login(body: LoginRequest) {
-    return request<LoginResponse>('/auth/login', {
+    return request<TokenResponse>('/auth/login', {
       method: 'POST',
       body: JSON.stringify(body),
     });
   },
 
   getMyStores(accessToken: string) {
-    return request<{ stores: OwnerStore[] }>('/owner/stores', {
+    return request<OwnerStore[]>('/owner/stores', {
       headers: authHeaders(accessToken),
     });
   },
 
   createStore(accessToken: string, body: CreateStoreRequest) {
-    return request<{ storeId: number; status: string; message: string }>('/owner/stores', {
+    return request<StoreDetail>('/owner/stores', {
       method: 'POST',
       headers: authHeaders(accessToken),
       body: JSON.stringify(body),
@@ -77,7 +80,15 @@ export const ownerApi = {
   },
 
   updateStore(accessToken: string, storeId: number, body: UpdateStoreRequest) {
-    return request<{ storeId: number; updatedAt: string }>(`/owner/stores/${storeId}`, {
+    return request<StoreDetail>(`/owner/stores/${storeId}`, {
+      method: 'PATCH',
+      headers: authHeaders(accessToken),
+      body: JSON.stringify(body),
+    });
+  },
+
+  updateCrowdStatus(accessToken: string, storeId: number, body: CrowdStatusRequest) {
+    return request<CrowdStatusResponse>(`/owner/stores/${storeId}/crowd-status`, {
       method: 'PATCH',
       headers: authHeaders(accessToken),
       body: JSON.stringify(body),
@@ -93,7 +104,7 @@ export const ownerApi = {
   },
 
   updatePromotion(accessToken: string, promotionId: number, body: PromotionRequest) {
-    return request<void>(`/owner/promotions/${promotionId}`, {
+    return request<PromotionDetail>(`/owner/promotions/${promotionId}`, {
       method: 'PATCH',
       headers: authHeaders(accessToken),
       body: JSON.stringify(body),
@@ -116,7 +127,7 @@ export const ownerApi = {
   },
 
   updateTimeSale(accessToken: string, timeSaleId: number, body: TimeSaleRequest) {
-    return request<void>(`/owner/time-sales/${timeSaleId}`, {
+    return request<TimeSale>(`/owner/time-sales/${timeSaleId}`, {
       method: 'PATCH',
       headers: authHeaders(accessToken),
       body: JSON.stringify(body),
@@ -124,7 +135,7 @@ export const ownerApi = {
   },
 
   closeTimeSale(accessToken: string, timeSaleId: number) {
-    return request<void>(`/owner/time-sales/${timeSaleId}/close`, {
+    return request<TimeSale>(`/owner/time-sales/${timeSaleId}/close`, {
       method: 'PATCH',
       headers: authHeaders(accessToken),
     });

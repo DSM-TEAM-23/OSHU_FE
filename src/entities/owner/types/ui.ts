@@ -5,13 +5,13 @@ export type AuthMode = 'login' | 'signup';
 
 export type Session = {
   accessToken: string;
-  refreshToken: string;
+  tokenType?: string;
   loginId: string;
 };
 
 export type MockAccount = LoginRequest & {
   accessToken: string;
-  refreshToken: string;
+  tokenType?: string;
 };
 
 export type SignupDraft = LoginRequest &

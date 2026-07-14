@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { LogOut, Plus, Store } from 'lucide-react';
-import type { CreateStoreRequest, PromotionDetail, PromotionRequest, StoreCongestionStatus, StoreDetail, TimeSale, TimeSaleRequest } from '../entities/owner/types';
+import type { CreateStoreRequest, CrowdStatusRequest, PromotionDetail, PromotionRequest, StoreDetail, TimeSale, TimeSaleRequest } from '../entities/owner/types';
 import type { AuthMode, MenuKey, MerchantData, MockAccount, Session, SignupDraft } from '../entities/owner/types/ui';
 import { createEmptyMerchantData, initialAccounts, merchantByToken } from '../entities/owner/model/mockData';
 import { ownerApi } from '../entities/owner/api';
@@ -64,7 +64,7 @@ export function App() {
     if (!account) return false;
 
     void ownerApi.login({ loginId, password }).catch(() => undefined);
-    setSession({ accessToken: account.accessToken, refreshToken: account.refreshToken, loginId: account.loginId });
+    setSession({ accessToken: account.accessToken, tokenType: account.tokenType, loginId: account.loginId });
     setMerchantData(merchantByToken[account.accessToken] ?? createEmptyMerchantData());
     setActiveMenu(merchantByToken[account.accessToken]?.store ? 'dashboard' : 'store');
     return true;
@@ -72,27 +72,24 @@ export function App() {
 
   const handleSignup = (draft: SignupDraft) => {
     const accessToken = `mock-token-new-${Date.now()}`;
-    const refreshToken = `mock-refresh-${Date.now()}`;
-    const openingHours = `${draft.openingTime}-${draft.closingTime}`;
+    const openingHours = `${draft.openingTime} - ${draft.closingTime}`;
     const nextStore: StoreDetail = {
       storeId: Date.now(),
       name: draft.name,
-      businessNumber: draft.businessNumber,
       category: draft.category,
       description: draft.description,
       address: draft.address,
       phone: draft.phone,
       openingHours,
-      congestionStatus: 'RELAXED',
+      latitude: draft.latitude,
+      longitude: draft.longitude,
+      crowdStatus: { level: 'RELAXED', label: '여유', estimatedWaitingMinutes: 0 },
       status: 'PENDING_APPROVAL',
-      activePromotionCount: 0,
-      imageUrls: [],
     };
 
     void ownerApi.signUp({ loginId: draft.loginId, password: draft.password })
       .then(() => ownerApi.createStore(accessToken, {
         name: draft.name,
-        businessNumber: draft.businessNumber,
         category: draft.category,
         description: draft.description,
         address: draft.address,
@@ -103,8 +100,8 @@ export function App() {
       }))
       .catch(() => undefined);
 
-    setAccounts((prev) => [...prev, { loginId: draft.loginId, password: draft.password, accessToken, refreshToken }]);
-    setSession({ accessToken, refreshToken, loginId: draft.loginId });
+    setAccounts((prev) => [...prev, { loginId: draft.loginId, password: draft.password, accessToken, tokenType: 'Bearer' }]);
+    setSession({ accessToken, tokenType: 'Bearer', loginId: draft.loginId });
     setMerchantData({ store: nextStore, timeSales: [], promotions: [] });
     setActiveMenu('store');
   };
@@ -121,36 +118,42 @@ export function App() {
     setMerchantData((prev) => (prev ? { ...prev, store: prev.store ? { ...prev.store, ...patch } : null } : prev));
   };
 
-  const submitStore = async (body: CreateStoreRequest, extra?: { congestionStatus: StoreCongestionStatus }) => {
+  const submitStore = async (body: CreateStoreRequest, crowdStatus: CrowdStatusRequest) => {
     if (!session) return;
 
     if (merchantData?.store?.storeId) {
       let warning: string | undefined;
+      let updatedStore: StoreDetail | undefined;
+      let updatedCrowdStatus = merchantData.store.crowdStatus;
       try {
-        await ownerApi.updateStore(session.accessToken, merchantData.store.storeId, {
+        updatedStore = await ownerApi.updateStore(session.accessToken, merchantData.store.storeId, {
           description: body.description,
           phone: body.phone,
           openingHours: body.openingHours,
         });
+        updatedCrowdStatus = await ownerApi.updateCrowdStatus(session.accessToken, merchantData.store.storeId, crowdStatus);
       } catch (error) {
         warning = getRequestFailureMessage(error);
       }
-      updateStore({ ...body, congestionStatus: extra?.congestionStatus });
+      updateStore({ ...(updatedStore ?? body), crowdStatus: updatedCrowdStatus ?? { level: crowdStatus.level, estimatedWaitingMinutes: crowdStatus.estimatedWaitingMinutes } });
       return warning;
     }
 
     let warning: string | undefined;
+    let createdStore: StoreDetail | undefined;
     try {
-      await ownerApi.createStore(session.accessToken, body);
+      createdStore = await ownerApi.createStore(session.accessToken, body);
+      if (createdStore.storeId) {
+        const updatedCrowdStatus = await ownerApi.updateCrowdStatus(session.accessToken, createdStore.storeId, crowdStatus);
+        createdStore = { ...createdStore, crowdStatus: updatedCrowdStatus };
+      }
     } catch (error) {
       warning = getRequestFailureMessage(error);
     }
-    const nextStore: StoreDetail = {
+    const nextStore: StoreDetail = createdStore ?? {
       storeId: Date.now(),
       status: 'PENDING_APPROVAL',
-      activePromotionCount: 0,
-      imageUrls: [],
-      congestionStatus: extra?.congestionStatus ?? 'RELAXED',
+      crowdStatus: { level: crowdStatus.level, estimatedWaitingMinutes: crowdStatus.estimatedWaitingMinutes },
       ...body,
     };
     setMerchantData((prev) => (prev ? { ...prev, store: nextStore } : prev));
@@ -167,6 +170,7 @@ export function App() {
     const nextTimeSale: TimeSale = created ?? {
       ...body,
       timeSaleId: Date.now(),
+      storeId: merchantData.store.storeId,
       status: 'SCHEDULED',
     };
     setMerchantData((prev) => (prev ? { ...prev, timeSales: [nextTimeSale, ...prev.timeSales] } : prev));
@@ -177,14 +181,18 @@ export function App() {
     if (!session) return;
     let warning: string | undefined;
     try {
-      await ownerApi.closeTimeSale(session.accessToken, timeSaleId);
+      const closedTimeSale = await ownerApi.closeTimeSale(session.accessToken, timeSaleId);
+      setMerchantData((prev) => (prev ? {
+        ...prev,
+        timeSales: prev.timeSales.map((item) => item.timeSaleId === timeSaleId ? closedTimeSale : item),
+      } : prev));
     } catch (error) {
       warning = getRequestFailureMessage(error);
+      setMerchantData((prev) => (prev ? {
+        ...prev,
+        timeSales: prev.timeSales.map((item) => item.timeSaleId === timeSaleId ? { ...item, status: 'ENDED' } : item),
+      } : prev));
     }
-    setMerchantData((prev) => (prev ? {
-      ...prev,
-      timeSales: prev.timeSales.map((item) => item.timeSaleId === timeSaleId ? { ...item, status: 'ENDED' } : item),
-    } : prev));
     if (warning) showToast(warning, 'error');
     else showToast('타임세일을 종료했습니다.', 'success');
   };
@@ -192,14 +200,15 @@ export function App() {
   const updateTimeSale = async (timeSaleId: number, body: TimeSaleRequest) => {
     if (!session) return;
     let warning: string | undefined;
+    let updatedTimeSale: TimeSale | undefined;
     try {
-      await ownerApi.updateTimeSale(session.accessToken, timeSaleId, body);
+      updatedTimeSale = await ownerApi.updateTimeSale(session.accessToken, timeSaleId, body);
     } catch (error) {
       warning = getRequestFailureMessage(error);
     }
     setMerchantData((prev) => (prev ? {
       ...prev,
-      timeSales: prev.timeSales.map((item) => item.timeSaleId === timeSaleId ? { ...item, ...body } : item),
+      timeSales: prev.timeSales.map((item) => item.timeSaleId === timeSaleId ? (updatedTimeSale ?? { ...item, ...body }) : item),
     } : prev));
     return warning;
   };
