@@ -73,7 +73,7 @@ export function AuthScreen({
     <main className="auth-page">
       <section className="auth-card wide-auth-card">
         <div className="brand auth-brand">
-          <div className="brand-mark">O</div>
+          <img className="brand-mark" src="/ohshu.svg" alt="OSHU 로고" />
           <div>
             <strong>OSHU</strong>
             <span>점주센터</span>

@@ -74,14 +74,11 @@ button {
 }
 
 .brand-mark {
-  display: grid;
   width: 36px;
   height: 36px;
-  place-items: center;
-  color: #fff;
-  background: var(--primary);
-  font-size: 17px;
-  font-weight: 800;
+  border: 1px solid var(--border);
+  background: #fff;
+  object-fit: cover;
 }
 
 .brand strong,

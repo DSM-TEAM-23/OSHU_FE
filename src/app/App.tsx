@@ -258,7 +258,7 @@ export function App() {
     <div className="app-shell">
       <aside className="sidebar">
         <div className="brand">
-          <div className="brand-mark">O</div>
+          <img className="brand-mark" src="/ohshu.svg" alt="OSHU 로고" />
           <div><strong>OSHU</strong><span>점주센터</span></div>
         </div>
 
