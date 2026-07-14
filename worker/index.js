@@ -1,4 +1,4 @@
-const API_ORIGIN = 'http://3.216.152.235';
+const API_ORIGIN = 'http://3.216.152.235:8080';
 
 export default {
   async fetch(request, env) {

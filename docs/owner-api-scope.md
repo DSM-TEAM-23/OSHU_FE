@@ -29,11 +29,11 @@
 
 ## 배포 base URL 점검
 - 현재 프론트는 `VITE_OSHU_API_BASE_URL=/api`를 기본값으로 사용합니다.
-- 로컬 개발은 `vite.config.ts`의 `/api -> http://3.216.152.235` 프록시를 사용합니다.
-- Cloudflare 배포는 `worker/index.js`에서 `/api -> http://3.216.152.235`로 프록시합니다.
-- 2026-07-14 점검 기준 `http://3.216.152.235`, `http://3.216.152.235:8080` 직접 접근은 타임아웃이고, 배포 프록시는 Cloudflare `1003`을 반환합니다. 서버가 외부 HTTP 접근을 허용하거나 HTTPS 도메인을 제공해야 실제 요청이 성공합니다.
+- 로컬 개발은 `vite.config.ts`의 `/api -> http://3.216.152.235:8080` 프록시를 사용합니다.
+- Cloudflare 배포는 `worker/index.js`에서 `/api -> http://3.216.152.235:8080`로 프록시합니다.
+- 2026-07-14 점검 기준 서버 API는 `http://3.216.152.235:8080` 기준으로 연결합니다. 루트 경로는 403을 반환할 수 있으므로 실제 기능별 API 경로로 확인해야 합니다.
 
 ## 프론트 테스트 URL
 - GitHub Pages 테스트 URL: `https://dsm-team-23.github.io/OSHU_FE/`
 - 서버 CORS 허용 Origin 값: `https://dsm-team-23.github.io`
-- 단, GitHub Pages는 HTTPS라 서버 API가 `http://3.216.152.235`만 제공되면 브라우저 Mixed Content 정책에 막힐 수 있습니다. 실제 API 호출까지 테스트하려면 서버도 HTTPS 도메인을 제공하거나 HTTPS 프록시가 필요합니다.
+- 단, GitHub Pages는 HTTPS라 서버 API가 `http://3.216.152.235:8080`만 제공되면 브라우저 Mixed Content 정책에 막힐 수 있습니다. 실제 API 호출까지 테스트하려면 서버도 HTTPS 도메인을 제공하거나 HTTPS 프록시가 필요합니다.
