@@ -55,6 +55,11 @@ export function StorePage({
   };
 
   const submit = async () => {
+    if (!form.name.trim() || !form.address.trim() || !Number.isFinite(form.latitude) || !Number.isFinite(form.longitude)) {
+      onNotify('상호명, 주소, 좌표를 올바르게 입력해주세요.', 'error');
+      return;
+    }
+
     const openingHours = form.openingTime && form.closingTime ? `${form.openingTime} - ${form.closingTime}` : form.openingHours;
     const { openingTime, closingTime, crowdLevel, estimatedWaitingMinutes, ...requestBody } = form;
     const warning = await onSubmit(

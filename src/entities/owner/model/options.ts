@@ -5,7 +5,8 @@ export const categoryOptions: Array<{ value: StoreCategory; label: string }> = [
   { value: '음식점', label: '음식점' },
   { value: '카페', label: '카페' },
   { value: '마트', label: '마트' },
-  { value: '시장·식료품', label: '시장·식료품' },
+  { value: '시장', label: '시장' },
+  { value: '식료품', label: '식료품' },
 ];
 
 export const promotionTypeOptions: Array<{ value: PromotionRequest['type']; label: string }> = [

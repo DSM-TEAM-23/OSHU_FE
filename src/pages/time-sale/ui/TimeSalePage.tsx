@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Plus, Save } from 'lucide-react';
 import type { TimeSale, TimeSaleRequest } from '../../../entities/owner/types';
+import { toDatetimeLocalValue } from '../../../shared/lib/format';
 import { TimeSaleTable } from '../../../shared/ui/tables';
 
 export function TimeSalePage({
@@ -44,6 +45,8 @@ export function TimeSalePage({
 
   const openCreateModal = () => {
     resetForm();
+    setMessage('');
+    setError('');
     setIsModalOpen(true);
   };
 
@@ -52,15 +55,24 @@ export function TimeSalePage({
       productName: item.productName,
       originalPrice: item.originalPrice,
       salePrice: item.salePrice,
-      startAt: item.startAt,
-      endAt: item.endAt,
+      startAt: toDatetimeLocalValue(item.startAt),
+      endAt: toDatetimeLocalValue(item.endAt),
       notice: item.notice ?? '',
     });
+    setMessage('');
+    setError('');
     setEditingId(item.timeSaleId);
     setIsModalOpen(true);
   };
 
   const submit = async () => {
+    if (!form.productName.trim() || !form.startAt || !form.endAt || form.originalPrice <= 0 || form.salePrice <= 0) {
+      const warning = '필수 항목과 가격 정보를 올바르게 입력해주세요.';
+      setError(warning);
+      onNotify(warning, 'error');
+      return;
+    }
+
     if (editingId) {
       const warning = await onUpdate(editingId, form);
       if (warning) {

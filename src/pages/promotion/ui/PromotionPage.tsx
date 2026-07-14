@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Plus, Save } from 'lucide-react';
 import type { PromotionDetail, PromotionRequest } from '../../../entities/owner/types';
 import { promotionTypeOptions } from '../../../entities/owner/model/options';
+import { toDatetimeLocalValue } from '../../../shared/lib/format';
 import { PromotionTable } from '../../../shared/ui/tables';
 
 export function PromotionPage({
@@ -38,6 +39,7 @@ export function PromotionPage({
 
   const openCreateModal = () => {
     resetForm();
+    setMessage('');
     setIsModalOpen(true);
   };
 
@@ -47,14 +49,20 @@ export function PromotionPage({
       title: item.title,
       content: item.content ?? '',
       imageUrl: item.imageUrl ?? '',
-      startAt: item.startAt ?? '',
-      endAt: item.endAt ?? '',
+      startAt: toDatetimeLocalValue(item.startAt),
+      endAt: toDatetimeLocalValue(item.endAt),
     });
+    setMessage('');
     setEditingId(item.promotionId);
     setIsModalOpen(true);
   };
 
   const submit = async () => {
+    if (!form.title.trim() || !form.startAt || !form.endAt) {
+      onNotify('제목과 노출 기간을 모두 입력해주세요.', 'error');
+      return;
+    }
+
     const warning = editingId ? await onUpdate(editingId, form) : await onSubmit(form);
     if (warning) {
       setMessage('');

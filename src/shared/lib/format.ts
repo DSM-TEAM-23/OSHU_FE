@@ -2,8 +2,13 @@ import type { CrowdLevel, PromotionDetail, PromotionRequest, TimeSale } from '..
 
 export const formatPrice = (price: number) => `${price.toLocaleString()}원`;
 
+export const toDatetimeLocalValue = (value?: string) => {
+  if (!value) return '';
+  return value.replace(' ', 'T').slice(0, 16);
+};
+
 export const formatPeriod = (startAt?: string, endAt?: string) =>
-  `${startAt?.slice(5, 16).replace('T', ' ') ?? '-'} - ${endAt?.slice(11, 16) ?? '-'}`;
+  `${toDatetimeLocalValue(startAt)?.slice(5).replace('T', ' ') || '-'} - ${toDatetimeLocalValue(endAt)?.slice(11) || '-'}`;
 
 export function congestionLabel(status?: CrowdLevel) {
   if (status === 'VERY_BUSY') return '매우 혼잡';

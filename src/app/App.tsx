@@ -12,6 +12,8 @@ import { PromotionPage } from '../pages/promotion/ui/PromotionPage';
 import { LayoutDashboard, Megaphone, Tag } from 'lucide-react';
 import { Toast, type ToastState } from '../shared/ui/Toast';
 
+const SESSION_STORAGE_KEY = 'oshu-owner-session';
+
 const menuItems = [
   { key: 'dashboard' as const, label: '대시보드', icon: LayoutDashboard },
   { key: 'store' as const, label: '가게 등록', icon: Store },
@@ -44,9 +46,38 @@ const getRequestFailureMessage = (error: unknown) => {
   return rawMessage;
 };
 
+const readStoredSession = (): Session | null => {
+  if (typeof window === 'undefined') return null;
+  const raw = window.localStorage.getItem(SESSION_STORAGE_KEY);
+  if (!raw) return null;
+
+  try {
+    const parsed = JSON.parse(raw) as Partial<Session>;
+    if (!parsed.accessToken || !parsed.loginId) return null;
+    return {
+      accessToken: parsed.accessToken,
+      tokenType: parsed.tokenType,
+      loginId: parsed.loginId,
+    };
+  } catch {
+    return null;
+  }
+};
+
+const storeSession = (session: Session) => {
+  if (typeof window === 'undefined') return;
+  window.localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
+};
+
+const clearStoredSession = () => {
+  if (typeof window === 'undefined') return;
+  window.localStorage.removeItem(SESSION_STORAGE_KEY);
+};
+
 export function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [merchantData, setMerchantData] = useState<MerchantData | null>(null);
+  const [isBootstrapping, setIsBootstrapping] = useState(true);
   const [authMode, setAuthMode] = useState<AuthMode>('login');
   const [activeMenu, setActiveMenu] = useState<MenuKey>('dashboard');
   const [editingTimeSaleId, setEditingTimeSaleId] = useState<number | null>(null);
@@ -66,6 +97,29 @@ export function App() {
     const timer = window.setTimeout(() => setToast(null), 3200);
     return () => window.clearTimeout(timer);
   }, [toast]);
+
+  useEffect(() => {
+    const restoreSession = async () => {
+      const storedSession = readStoredSession();
+      if (!storedSession) {
+        setIsBootstrapping(false);
+        return;
+      }
+
+      try {
+        const restoredMerchantData = await loadMerchantData(storedSession.accessToken);
+        setSession(storedSession);
+        setMerchantData(restoredMerchantData);
+        setActiveMenu(restoredMerchantData.store ? 'dashboard' : 'store');
+      } catch {
+        clearStoredSession();
+      } finally {
+        setIsBootstrapping(false);
+      }
+    };
+
+    void restoreSession();
+  }, []);
 
   const loadMerchantData = async (accessToken: string) => {
     const stores = await ownerApi.getMyStores(accessToken);
@@ -94,6 +148,7 @@ export function App() {
     }
 
     setSession({ accessToken: token.accessToken, tokenType: token.tokenType, loginId: trimmedLoginId });
+    storeSession({ accessToken: token.accessToken, tokenType: token.tokenType, loginId: trimmedLoginId });
 
     try {
       const nextMerchantData = await loadMerchantData(token.accessToken);
@@ -128,8 +183,9 @@ export function App() {
       });
 
       setSession({ accessToken: token.accessToken, tokenType: token.tokenType, loginId: draft.loginId.trim() });
+      storeSession({ accessToken: token.accessToken, tokenType: token.tokenType, loginId: draft.loginId.trim() });
       setMerchantData({ store: createdStore, timeSales: createdStore.timeSales ?? [], promotions: createdStore.promotions ?? [] });
-      setActiveMenu('store');
+      setActiveMenu('dashboard');
       return { ok: true, message: '회원가입과 가게 등록이 완료되었습니다.' };
     } catch (error) {
       return { ok: false, message: getRequestFailureMessage(error) };
@@ -139,6 +195,7 @@ export function App() {
   const handleLogout = () => {
     setSession(null);
     setMerchantData(null);
+    clearStoredSession();
     setActiveMenu('dashboard');
     setAuthMode('login');
     showToast('로그아웃되었습니다.', 'success');
@@ -182,7 +239,19 @@ export function App() {
       warning = getRequestFailureMessage(error);
     }
     if (warning || !createdStore) return warning ?? '가게 등록에 실패했습니다.';
-    setMerchantData((prev) => (prev ? { ...prev, store: createdStore } : prev));
+    setMerchantData((prev) => (prev
+      ? {
+        ...prev,
+        store: createdStore,
+        timeSales: createdStore.timeSales ?? prev.timeSales,
+        promotions: createdStore.promotions ?? prev.promotions,
+      }
+      : {
+        store: createdStore,
+        timeSales: createdStore.timeSales ?? [],
+        promotions: createdStore.promotions ?? [],
+      }));
+    setActiveMenu('dashboard');
     return undefined;
   };
 
@@ -273,6 +342,22 @@ export function App() {
     setEditingTimeSaleId(timeSaleId);
     setActiveMenu('timesale');
   };
+
+  if (isBootstrapping) {
+    return (
+      <>
+        <main className="auth-page">
+          <section className="auth-card wide-auth-card">
+            <div className="brand auth-brand">
+              <img className="brand-mark" src="/ohshu.svg" alt="OSHU 로고" />
+            </div>
+            <p className="auth-help">이전 로그인 정보를 확인하고 있습니다.</p>
+          </section>
+        </main>
+        <Toast toast={toast} onClose={() => setToast(null)} />
+      </>
+    );
+  }
 
   if (!session || !merchantData) {
     return (
