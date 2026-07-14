@@ -212,8 +212,9 @@ export const ownerApi = {
     });
   },
 
-  getDiscountRecommendation(accessToken: string, storeId: number) {
-    return request<DiscountRecommendationResponse>(`/owner/stores/${storeId}/discount-recommendations`, {
+  getDiscountRecommendation(accessToken: string, storeId: number, orderDate: string) {
+    const query = new URLSearchParams({ orderDate }).toString();
+    return request<DiscountRecommendationResponse>(`/owner/stores/${storeId}/discount-recommendations?${query}`, {
       headers: authHeaders(accessToken),
     });
   },

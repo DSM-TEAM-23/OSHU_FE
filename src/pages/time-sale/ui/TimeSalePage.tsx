@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Bot, Plus, Save, Sparkles } from 'lucide-react';
 import type {
   DailyOrderStatisticsRequest,
@@ -8,12 +8,17 @@ import type {
   TimeSaleRequest,
 } from '../../../entities/owner/types';
 import { formatHourRange, toDatetimeLocalValue, todayDateValue } from '../../../shared/lib/format';
+import { getOperatingHours } from '../../../shared/lib/openingHours';
 import { TimeSaleTable } from '../../../shared/ui/tables';
 
-const hourlyInputDefaults = () => Array.from({ length: 24 }, (_, hour) => ({ hour, orderCount: 0 }));
+const buildHourlyOrderCounts = (hours: number[], previousItems?: HourlyOrderCountRequest[]) => {
+  const previousMap = new Map(previousItems?.map((item) => [item.hour, item.orderCount]) ?? []);
+  return hours.map((hour) => ({ hour, orderCount: previousMap.get(hour) ?? 0 }));
+};
 
 export function TimeSalePage({
   storeId,
+  openingHours,
   timeSales,
   onSubmit,
   onUpdate,
@@ -25,12 +30,13 @@ export function TimeSalePage({
   onNotify,
 }: {
   storeId?: number;
+  openingHours?: string;
   timeSales: TimeSale[];
   onSubmit: (body: TimeSaleRequest) => Promise<string | undefined>;
   onUpdate: (timeSaleId: number, body: TimeSaleRequest) => Promise<string | undefined>;
   onClose: (timeSaleId: number) => Promise<void>;
   onSaveOrderStatistics: (body: DailyOrderStatisticsRequest) => Promise<string | undefined>;
-  onRecommendDiscount: () => Promise<DiscountRecommendationResponse>;
+  onRecommendDiscount: (orderDate: string) => Promise<DiscountRecommendationResponse>;
   editingTimeSaleId?: number | null;
   onEditConsumed?: () => void;
   onNotify: (message: string, type?: 'success' | 'error') => void;
@@ -49,7 +55,8 @@ export function TimeSalePage({
   const [editingId, setEditingId] = useState<number | null>(null);
 
   const [statisticsDate, setStatisticsDate] = useState(todayDateValue());
-  const [hourlyOrderCounts, setHourlyOrderCounts] = useState<HourlyOrderCountRequest[]>(hourlyInputDefaults());
+  const operatingHours = useMemo(() => getOperatingHours(openingHours), [openingHours]);
+  const [hourlyOrderCounts, setHourlyOrderCounts] = useState<HourlyOrderCountRequest[]>(() => buildHourlyOrderCounts(operatingHours));
   const [statisticsMessage, setStatisticsMessage] = useState('');
   const [statisticsError, setStatisticsError] = useState('');
   const [isSavingStatistics, setIsSavingStatistics] = useState(false);
@@ -165,7 +172,7 @@ export function TimeSalePage({
 
     setIsLoadingRecommendation(true);
     try {
-      const nextRecommendation = await onRecommendDiscount();
+      const nextRecommendation = await onRecommendDiscount(statisticsDate);
       setRecommendation(nextRecommendation);
       setStatisticsError('');
       setStatisticsMessage('');
@@ -185,6 +192,10 @@ export function TimeSalePage({
     if (target) openEditModal(target);
     onEditConsumed?.();
   }, [editingTimeSaleId, onEditConsumed, timeSales]);
+
+  useEffect(() => {
+    setHourlyOrderCounts((prev) => buildHourlyOrderCounts(operatingHours, prev));
+  }, [operatingHours]);
 
   return (
     <div className="panel-stack">
@@ -218,6 +229,10 @@ export function TimeSalePage({
                 총 주문 {hourlyOrderCounts.reduce((sum, item) => sum + item.orderCount, 0)}건
               </div>
             </div>
+
+            <p className="eyebrow">
+              운영시간 기준 입력 {openingHours?.trim() || '00:00 - 24:00'}
+            </p>
 
             <div className="hourly-grid">
               {hourlyOrderCounts.map((item) => (
@@ -257,8 +272,8 @@ export function TimeSalePage({
                   <strong>{recommendation.discountRate}% 할인</strong>
                 </div>
                 <div className="recommendation-meta">
-                  <span className="plain-badge">분석 기간 {recommendation.analysisStartDate} ~ {recommendation.analysisEndDate}</span>
-                  <span className="plain-badge">분석 일수 {recommendation.analyzedDays}일</span>
+                  <span className="plain-badge">분석 날짜 {recommendation.analysisDate}</span>
+                  <span className="plain-badge">분석 시간대 {recommendation.analyzedHours}개</span>
                 </div>
                 <div className="recommendation-reason">
                   <p>{recommendation.reason}</p>

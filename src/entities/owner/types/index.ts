@@ -149,9 +149,8 @@ export type DiscountRecommendationResponse = {
   endHour: number;
   discountRate: number;
   reason: string;
-  analysisStartDate: string;
-  analysisEndDate: string;
-  analyzedDays: number;
+  analysisDate: string;
+  analyzedHours: number;
 };
 
 export type TimeSale = TimeSaleRequest & {

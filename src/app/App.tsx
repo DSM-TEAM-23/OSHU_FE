@@ -363,12 +363,12 @@ export function App() {
     }
   };
 
-  const getDiscountRecommendation = async () => {
+  const getDiscountRecommendation = async (orderDate: string) => {
     if (!session || !merchantData?.store?.storeId) {
       throw new Error('가게 정보가 필요합니다.');
     }
     try {
-      return await ownerApi.getDiscountRecommendation(session.accessToken, merchantData.store.storeId);
+      return await ownerApi.getDiscountRecommendation(session.accessToken, merchantData.store.storeId, orderDate);
     } catch (error) {
       throw new Error(getAiRecommendationFailureMessage(error));
     }
@@ -484,6 +484,7 @@ export function App() {
           {activeMenu === 'timesale' && (
             <TimeSalePage
               storeId={merchantData.store?.storeId}
+              openingHours={merchantData.store?.openingHours}
               timeSales={merchantData.timeSales}
               onSubmit={submitTimeSale}
               onUpdate={updateTimeSale}
