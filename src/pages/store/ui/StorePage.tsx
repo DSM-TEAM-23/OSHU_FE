@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { MapPin, Pencil, Save, Store } from 'lucide-react';
 import type { CreateStoreRequest, CrowdLevel, CrowdStatusRequest, StoreCategory, StoreDetail } from '../../../entities/owner/types';
 import { categoryOptions } from '../../../entities/owner/model/options';
-import { congestionLabel, storeStatusLabel } from '../../../shared/lib/format';
+import { congestionLabel } from '../../../shared/lib/format';
 
 const congestionOptions: Array<{ value: CrowdLevel; label: string }> = [
   { value: 'VERY_BUSY', label: '매우 혼잡' },
@@ -84,7 +84,6 @@ export function StorePage({
               <p><MapPin size={14} />{store.address}</p>
             </div>
             <div className="profile-badges">
-              <span className="plain-badge">{storeStatusLabel(store.status)}</span>
               <span className={`plain-badge congestion-${store.crowdStatus?.level ?? 'RELAXED'}`}>
                 {congestionLabel(store.crowdStatus?.level)}
                 {typeof store.crowdStatus?.estimatedWaitingMinutes === 'number' ? ` · ${store.crowdStatus.estimatedWaitingMinutes}분` : ''}

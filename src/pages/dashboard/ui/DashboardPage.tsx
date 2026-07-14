@@ -1,7 +1,7 @@
 import { Megaphone, Store, Tag } from 'lucide-react';
 import type { MerchantData, MenuKey } from '../../../entities/owner/types/ui';
 import { TimeSaleTable } from '../../../shared/ui/tables';
-import { congestionLabel, storeStatusLabel } from '../../../shared/lib/format';
+import { congestionLabel } from '../../../shared/lib/format';
 
 export function DashboardPage({
   merchantData,
@@ -24,7 +24,6 @@ export function DashboardPage({
             <h2>{merchantData.store?.name || '가게 등록 필요'}</h2>
           </div>
           <div className="profile-badges">
-            <span className="plain-badge">{storeStatusLabel(merchantData.store?.status)}</span>
             <span className={`plain-badge congestion-${merchantData.store?.crowdStatus?.level ?? 'RELAXED'}`}>
               {congestionLabel(merchantData.store?.crowdStatus?.level)}
               {typeof merchantData.store?.crowdStatus?.estimatedWaitingMinutes === 'number'

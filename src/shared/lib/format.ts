@@ -1,15 +1,9 @@
-import type { CrowdLevel, PromotionDetail, PromotionRequest, StoreApprovalStatus, TimeSale } from '../../entities/owner/types';
+import type { CrowdLevel, PromotionDetail, PromotionRequest, TimeSale } from '../../entities/owner/types';
 
 export const formatPrice = (price: number) => `${price.toLocaleString()}원`;
 
 export const formatPeriod = (startAt?: string, endAt?: string) =>
   `${startAt?.slice(5, 16).replace('T', ' ') ?? '-'} - ${endAt?.slice(11, 16) ?? '-'}`;
-
-export function storeStatusLabel(status?: StoreApprovalStatus) {
-  if (status === 'ACTIVE') return '승인 완료';
-  if (status === 'REJECTED') return '반려';
-  return '검토중';
-}
 
 export function congestionLabel(status?: CrowdLevel) {
   if (status === 'VERY_BUSY') return '매우 혼잡';

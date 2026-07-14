@@ -4,7 +4,6 @@ import type { CreateStoreRequest, CrowdStatusRequest, PromotionDetail, Promotion
 import type { AuthMode, MenuKey, MerchantData, MockAccount, Session, SignupDraft } from '../entities/owner/types/ui';
 import { createEmptyMerchantData, initialAccounts, merchantByToken } from '../entities/owner/model/mockData';
 import { ownerApi } from '../entities/owner/api';
-import { storeStatusLabel } from '../shared/lib/format';
 import { AuthScreen } from '../pages/auth/ui/AuthScreen';
 import { DashboardPage } from '../pages/dashboard/ui/DashboardPage';
 import { StorePage } from '../pages/store/ui/StorePage';
@@ -270,7 +269,7 @@ export function App() {
 
         <div className="owner-card">
           <div className="owner-icon"><Store size={21} /></div>
-          <div><strong>{merchantData.store?.name || '가게 미등록'}</strong><p>{session.loginId} · {storeStatusLabel(merchantData.store?.status)}</p></div>
+          <div><strong>{merchantData.store?.name || '가게 미등록'}</strong><p>{session.loginId}</p></div>
         </div>
       </aside>
 

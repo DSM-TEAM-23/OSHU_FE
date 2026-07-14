@@ -67,15 +67,15 @@ button {
 }
 
 .brand {
-  margin-bottom: 28px;
-  padding-bottom: 18px;
+  margin-bottom: 34px;
+  padding: 12px 0 24px;
   border-bottom: 1px solid var(--border);
 }
 
 .brand-mark {
   display: block;
-  width: 132px;
-  height: 44px;
+  width: 178px;
+  height: 68px;
   object-fit: contain;
   object-position: left center;
 }
