@@ -26,3 +26,9 @@
 
 ## 제외한 API
 소비자 앱용 조회 API인 `/stores`, `/stores/map`, `/promotions` 공개 조회 계열은 점주 웹 화면에서 제외합니다.
+
+## 배포 base URL 점검
+- 현재 프론트는 `VITE_OSHU_API_BASE_URL=/api`를 기본값으로 사용합니다.
+- 로컬 개발은 `vite.config.ts`의 `/api -> http://3.216.152.235` 프록시를 사용합니다.
+- Cloudflare 배포는 `worker/index.js`에서 `/api -> http://3.216.152.235`로 프록시합니다.
+- 2026-07-14 점검 기준 `http://3.216.152.235`, `http://3.216.152.235:8080` 직접 접근은 타임아웃이고, 배포 프록시는 Cloudflare `1003`을 반환합니다. 서버가 외부 HTTP 접근을 허용하거나 HTTPS 도메인을 제공해야 실제 요청이 성공합니다.

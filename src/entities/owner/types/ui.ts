@@ -9,11 +9,6 @@ export type Session = {
   loginId: string;
 };
 
-export type MockAccount = LoginRequest & {
-  accessToken: string;
-  tokenType?: string;
-};
-
 export type SignupDraft = LoginRequest &
   CreateStoreRequest & {
     passwordConfirm: string;

@@ -15,7 +15,16 @@ import type {
   UpdateStoreRequest,
 } from '../types';
 
-const API_BASE_URL = import.meta.env.VITE_OSHU_API_BASE_URL ?? 'http://localhost:8080';
+const DEFAULT_API_BASE_URL = '/api';
+
+const normalizeBaseUrl = (baseUrl: string) => {
+  const trimmedBaseUrl = baseUrl.trim().replace(/\/$/, '');
+  if (!trimmedBaseUrl) return DEFAULT_API_BASE_URL;
+  if (/^https?:\/\//.test(trimmedBaseUrl)) return trimmedBaseUrl;
+  return `http://${trimmedBaseUrl}`;
+};
+
+const API_BASE_URL = normalizeBaseUrl(import.meta.env.VITE_OSHU_API_BASE_URL ?? DEFAULT_API_BASE_URL);
 
 async function request<TResponse>(path: string, options: RequestInit = {}): Promise<TResponse> {
   const response = await fetch(`${API_BASE_URL}${path}`, {

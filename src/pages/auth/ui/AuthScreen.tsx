@@ -13,13 +13,14 @@ export function AuthScreen({
 }: {
   mode: AuthMode;
   setMode: (mode: AuthMode) => void;
-  onLogin: (loginId: string, password: string) => boolean;
-  onSignup: (draft: SignupDraft) => void;
+  onLogin: (loginId: string, password: string) => Promise<{ ok: boolean; message?: string }>;
+  onSignup: (draft: SignupDraft) => Promise<{ ok: boolean; message?: string }>;
   onNotify: (message: string, type?: 'success' | 'error') => void;
 }) {
-  const [loginId, setLoginId] = useState('oshu_bakery');
-  const [loginPassword, setLoginPassword] = useState('pass1234');
+  const [loginId, setLoginId] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [signupStep, setSignupStep] = useState(0);
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
   const [draft, setDraft] = useState<SignupDraft>(createEmptySignupDraft());
@@ -30,7 +31,7 @@ export function AuthScreen({
     setDraft((prev) => ({ ...prev, ...patch }));
   };
 
-  const submitLogin = () => {
+  const submitLogin = async () => {
     if (!loginId.trim() || !loginPassword) {
       const message = '계정 ID와 비밀번호를 입력해주세요.';
       setLoginError(message);
@@ -38,10 +39,12 @@ export function AuthScreen({
       return;
     }
 
-    const success = onLogin(loginId, loginPassword);
-    const message = '계정 ID 또는 비밀번호가 일치하지 않습니다.';
-    setLoginError(success ? '' : message);
-    onNotify(success ? '로그인되었습니다.' : message, success ? 'success' : 'error');
+    setIsSubmitting(true);
+    const result = await onLogin(loginId, loginPassword);
+    const message = result.message ?? '계정 ID 또는 비밀번호가 일치하지 않습니다.';
+    setLoginError(result.ok ? '' : message);
+    onNotify(result.ok ? '로그인되었습니다.' : message, result.ok ? 'success' : 'error');
+    setIsSubmitting(false);
   };
 
   const canGoNext = () => {
@@ -60,13 +63,15 @@ export function AuthScreen({
     setIsSignupModalOpen(false);
   };
 
-  const submitSignup = () => {
+  const submitSignup = async () => {
     if (!canGoNext()) {
       onNotify('필수 정보를 모두 입력해주세요.', 'error');
       return;
     }
-    onSignup(draft);
-    onNotify('회원가입이 완료되었습니다.', 'success');
+    setIsSubmitting(true);
+    const result = await onSignup(draft);
+    onNotify(result.message ?? (result.ok ? '회원가입이 완료되었습니다.' : '회원가입에 실패했습니다.'), result.ok ? 'success' : 'error');
+    setIsSubmitting(false);
   };
 
   return (
@@ -92,7 +97,7 @@ export function AuthScreen({
               <input type="password" value={loginPassword} onChange={(event) => setLoginPassword(event.target.value)} placeholder="비밀번호를 입력하세요" />
             </label>
             {loginError && <p className="form-error">{loginError}</p>}
-            <button className="primary-button auth-submit" onClick={submitLogin}>로그인</button>
+            <button className="primary-button auth-submit" disabled={isSubmitting} onClick={submitLogin}>{isSubmitting ? '처리중' : '로그인'}</button>
             <p className="auth-help">로그인한 계정의 가게만 관리할 수 있습니다.</p>
           </div>
         ) : (
@@ -210,7 +215,7 @@ export function AuthScreen({
                   {signupStep < signupSteps.length - 1 ? (
                     <button className="primary-button" disabled={!canGoNext()} onClick={() => setSignupStep((prev) => prev + 1)}>다음</button>
                   ) : (
-                    <button className="primary-button" disabled={!canGoNext()} onClick={submitSignup}>회원가입 완료</button>
+                    <button className="primary-button" disabled={!canGoNext() || isSubmitting} onClick={submitSignup}>{isSubmitting ? '처리중' : '회원가입 완료'}</button>
                   )}
                 </div>
               </footer>

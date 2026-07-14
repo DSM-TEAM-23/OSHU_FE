@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { LogOut, Plus, Store } from 'lucide-react';
 import type { CreateStoreRequest, CrowdStatusRequest, PromotionDetail, PromotionRequest, StoreDetail, TimeSale, TimeSaleRequest } from '../entities/owner/types';
-import type { AuthMode, MenuKey, MerchantData, MockAccount, Session, SignupDraft } from '../entities/owner/types/ui';
-import { createEmptyMerchantData, initialAccounts, merchantByToken } from '../entities/owner/model/mockData';
+import type { AuthMode, MenuKey, MerchantData, Session, SignupDraft } from '../entities/owner/types/ui';
+import { createEmptyMerchantData } from '../entities/owner/model/mockData';
 import { ownerApi } from '../entities/owner/api';
 import { AuthScreen } from '../pages/auth/ui/AuthScreen';
 import { DashboardPage } from '../pages/dashboard/ui/DashboardPage';
@@ -28,13 +28,12 @@ const getRequestFailureMessage = (error: unknown) => {
     return '서버가 요청을 거절했습니다. 실제 로그인 토큰으로 다시 확인해야 합니다.';
   }
   if (rawMessage.includes('404')) {
-    return '서버에서 해당 타임세일을 찾지 못했습니다. 더미 ID와 서버 ID가 다를 수 있습니다.';
+    return '서버에서 요청한 데이터를 찾지 못했습니다.';
   }
   return rawMessage;
 };
 
 export function App() {
-  const [accounts, setAccounts] = useState<MockAccount[]>(initialAccounts);
   const [session, setSession] = useState<Session | null>(null);
   const [merchantData, setMerchantData] = useState<MerchantData | null>(null);
   const [authMode, setAuthMode] = useState<AuthMode>('login');
@@ -57,37 +56,43 @@ export function App() {
     return () => window.clearTimeout(timer);
   }, [toast]);
 
-  const handleLogin = (loginId: string, password: string) => {
-    const account = accounts.find((item) => item.loginId === loginId.trim() && item.password === password);
+  const loadMerchantData = async (accessToken: string) => {
+    const stores = await ownerApi.getMyStores(accessToken);
+    const firstStore = stores[0];
 
-    if (!account) return false;
+    if (!firstStore?.storeId) {
+      return createEmptyMerchantData();
+    }
 
-    void ownerApi.login({ loginId, password }).catch(() => undefined);
-    setSession({ accessToken: account.accessToken, tokenType: account.tokenType, loginId: account.loginId });
-    setMerchantData(merchantByToken[account.accessToken] ?? createEmptyMerchantData());
-    setActiveMenu(merchantByToken[account.accessToken]?.store ? 'dashboard' : 'store');
-    return true;
+    const store = await ownerApi.getMyStore(accessToken, firstStore.storeId);
+    return {
+      store,
+      timeSales: store.timeSales ?? [],
+      promotions: store.promotions ?? [],
+    };
   };
 
-  const handleSignup = (draft: SignupDraft) => {
-    const accessToken = `mock-token-new-${Date.now()}`;
-    const openingHours = `${draft.openingTime} - ${draft.closingTime}`;
-    const nextStore: StoreDetail = {
-      storeId: Date.now(),
-      name: draft.name,
-      category: draft.category,
-      description: draft.description,
-      address: draft.address,
-      phone: draft.phone,
-      openingHours,
-      latitude: draft.latitude,
-      longitude: draft.longitude,
-      crowdStatus: { level: 'RELAXED', label: '여유', estimatedWaitingMinutes: 0 },
-      status: 'PENDING_APPROVAL',
-    };
+  const handleLogin = async (loginId: string, password: string) => {
+    try {
+      const token = await ownerApi.login({ loginId: loginId.trim(), password });
+      const nextMerchantData = await loadMerchantData(token.accessToken);
 
-    void ownerApi.signUp({ loginId: draft.loginId, password: draft.password })
-      .then(() => ownerApi.createStore(accessToken, {
+      setSession({ accessToken: token.accessToken, tokenType: token.tokenType, loginId: loginId.trim() });
+      setMerchantData(nextMerchantData);
+      setActiveMenu(nextMerchantData.store ? 'dashboard' : 'store');
+      return { ok: true };
+    } catch (error) {
+      return { ok: false, message: getRequestFailureMessage(error) };
+    }
+  };
+
+  const handleSignup = async (draft: SignupDraft) => {
+    const openingHours = `${draft.openingTime} - ${draft.closingTime}`;
+
+    try {
+      await ownerApi.signUp({ loginId: draft.loginId.trim(), password: draft.password });
+      const token = await ownerApi.login({ loginId: draft.loginId.trim(), password: draft.password });
+      const createdStore = await ownerApi.createStore(token.accessToken, {
         name: draft.name,
         category: draft.category,
         description: draft.description,
@@ -96,13 +101,15 @@ export function App() {
         longitude: draft.longitude,
         phone: draft.phone,
         openingHours,
-      }))
-      .catch(() => undefined);
+      });
 
-    setAccounts((prev) => [...prev, { loginId: draft.loginId, password: draft.password, accessToken, tokenType: 'Bearer' }]);
-    setSession({ accessToken, tokenType: 'Bearer', loginId: draft.loginId });
-    setMerchantData({ store: nextStore, timeSales: [], promotions: [] });
-    setActiveMenu('store');
+      setSession({ accessToken: token.accessToken, tokenType: token.tokenType, loginId: draft.loginId.trim() });
+      setMerchantData({ store: createdStore, timeSales: createdStore.timeSales ?? [], promotions: createdStore.promotions ?? [] });
+      setActiveMenu('store');
+      return { ok: true, message: '회원가입과 가게 등록이 완료되었습니다.' };
+    } catch (error) {
+      return { ok: false, message: getRequestFailureMessage(error) };
+    }
   };
 
   const handleLogout = () => {
