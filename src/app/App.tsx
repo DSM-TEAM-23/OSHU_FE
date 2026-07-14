@@ -3,7 +3,7 @@ import { LogOut, Plus, Store } from 'lucide-react';
 import type { CreateStoreRequest, CrowdStatusRequest, PromotionDetail, PromotionRequest, StoreDetail, TimeSale, TimeSaleRequest } from '../entities/owner/types';
 import type { AuthMode, MenuKey, MerchantData, Session, SignupDraft } from '../entities/owner/types/ui';
 import { createEmptyMerchantData } from '../entities/owner/model/mockData';
-import { ownerApi } from '../entities/owner/api';
+import { ApiError, ownerApi } from '../entities/owner/api';
 import { AuthScreen } from '../pages/auth/ui/AuthScreen';
 import { DashboardPage } from '../pages/dashboard/ui/DashboardPage';
 import { StorePage } from '../pages/store/ui/StorePage';
@@ -20,6 +20,15 @@ const menuItems = [
 ];
 
 const getRequestFailureMessage = (error: unknown) => {
+  if (error instanceof ApiError) {
+    if (error.status === 401 || error.status === 403) {
+      return '권한이 없거나 로그인 세션이 만료되었습니다. 다시 로그인해주세요.';
+    }
+    if (error.status === 404) {
+      return '서버에서 요청한 데이터를 찾지 못했습니다.';
+    }
+    return error.message;
+  }
   const rawMessage = error instanceof Error ? error.message : '알 수 없는 오류';
   if (rawMessage.includes('Failed to fetch')) {
     return '서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.';
@@ -94,7 +103,10 @@ export function App() {
     } catch (error) {
       setMerchantData(createEmptyMerchantData());
       setActiveMenu('store');
-      return { ok: true, message: '로그인은 완료됐지만 가게 정보를 불러오지 못했습니다.', notifyType: 'error' as const };
+      if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {
+        return { ok: true, message: '로그인은 성공했지만 점주 권한 확인에 실패했습니다.', notifyType: 'error' as const };
+      }
+      return { ok: true, message: '로그인은 성공했지만 가게 정보를 불러오지 못했습니다.', notifyType: 'error' as const };
     }
   };
 

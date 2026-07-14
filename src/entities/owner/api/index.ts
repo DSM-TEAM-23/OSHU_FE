@@ -33,6 +33,18 @@ const normalizeBaseUrl = (baseUrl: string) => {
 
 const API_BASE_URL = normalizeBaseUrl(import.meta.env.VITE_OSHU_API_BASE_URL ?? DEFAULT_API_BASE_URL);
 
+export class ApiError extends Error {
+  status: number;
+  payload?: unknown;
+
+  constructor(status: number, message: string, payload?: unknown) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+    this.payload = payload;
+  }
+}
+
 const normalizeTokenResponse = (token: RawTokenResponse): TokenResponse => {
   const accessToken = token.accessToken ?? token.access_token ?? token.token;
   if (!accessToken) {
@@ -45,17 +57,34 @@ const normalizeTokenResponse = (token: RawTokenResponse): TokenResponse => {
 };
 
 async function request<TResponse>(path: string, options: RequestInit = {}): Promise<TResponse> {
+  const headers = {
+    Accept: 'application/json',
+    ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+    ...options.headers,
+  };
+
   const response = await fetch(`${API_BASE_URL}${path}`, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
     ...options,
+    headers: {
+      ...headers,
+    },
   });
 
   if (!response.ok) {
     const errorText = await response.text().catch(() => '');
-    throw new Error(errorText ? `API request failed: ${response.status} ${errorText}` : `API request failed: ${response.status}`);
+    const payload = errorText
+      ? (() => {
+        try {
+          return JSON.parse(errorText) as unknown;
+        } catch {
+          return undefined;
+        }
+      })()
+      : undefined;
+    const message = typeof payload === 'object' && payload && 'message' in payload && typeof payload.message === 'string'
+      ? payload.message
+      : errorText || `HTTP ${response.status}`;
+    throw new ApiError(response.status, message, payload);
   }
 
   if (response.status === 204) {
